@@ -171,11 +171,12 @@ body::before {
 }
 
 .mainGrid {
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
 }
 
 .cardsGrid {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
 }
 
 .commentaryText {
@@ -190,6 +191,8 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+  min-width: 0;
 }
 
 .agentCard.active {
@@ -207,6 +210,7 @@ body::before {
   display: flex;
   gap: 16px;
   align-items: center;
+  min-width: 0;
 }
 
 .avatarWrap {
@@ -237,6 +241,7 @@ body::before {
   font-size: 1.25rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  overflow-wrap: anywhere;
 }
 
 .agentValue {
@@ -299,6 +304,7 @@ body::before {
   background: rgba(0, 0, 0, 0.2);
   border-left: 2px solid var(--border-bright);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .researchArea,
@@ -315,6 +321,7 @@ body::before {
   color: var(--muted);
   line-height: 1.55;
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .signalGrid {
@@ -342,6 +349,7 @@ body::before {
   display: block;
   font-size: 12px;
   font-family: var(--font-mono);
+  overflow-wrap: anywhere;
 }
 
 .positionList {
@@ -359,15 +367,33 @@ body::before {
   border-bottom: 1px solid var(--border);
 }
 
+.positionMain,
+.positionValue {
+  min-width: 0;
+}
+
+.positionMain {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.positionValue {
+  text-align: right;
+}
+
 .positionRow strong {
   font-size: 12px;
   font-family: var(--font-mono);
+  display: block;
 }
 
 .positionRow span {
   color: var(--muted);
   font-size: 10px;
   font-family: var(--font-mono);
+  display: block;
+  overflow-wrap: anywhere;
 }
 
 .sideGrid {

@@ -7,7 +7,7 @@ import { ArenaOrchestrator } from "../services/arena";
 const defaultConfig: ArenaConfig = {
   mode: "fixed",
   totalRounds: 100,
-  roundDelayMs: 60000,
+  roundDelayMs: 300000,
   chain: "solana",
 };
 

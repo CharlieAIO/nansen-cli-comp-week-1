@@ -107,55 +107,8 @@ export class ArenaOrchestrator {
           this.record.state.portfolios[agent.id] = this.sim.markToMarket(portfolio, shared.priceMap);
         }
 
-        for (const agent of this.agents) {
-          if (this.record.state.aborted) {
-            break;
-          }
-
-          this.record.state.activeAgentId = agent.id;
-          this.emit("agent_start", { agentId: agent.id, name: agent.name });
-
-          const context = {
-            nansen: this.nansen,
-            claude: this.claude,
-            mcp: this.mcp,
-            shared,
-            portfolio: this.record.state.portfolios[agent.id],
-            round,
-          };
-          const marketData = await agent.gatherData(context);
-          this.emit("agent_data", { agentId: agent.id, dataSources: agent.dataSources });
-          const decision = await agent.decide({
-            marketData,
-            portfolio: this.record.state.portfolios[agent.id],
-          }, context, round);
-          this.emit("agent_decision", { agentId: agent.id, thinking: decision.thinking, tradeCount: decision.trades.length });
-          const result = this.sim.executeTrades(this.record.state.portfolios[agent.id], decision.trades, shared.priceMap);
-          this.record.state.portfolios[agent.id] = result.portfolio;
-          this.record.state.tradeHistory[agent.id].push(...result.executedTrades);
-          this.record.state.thinkingHistory[agent.id].push(decision.thinking);
-          const roundResult: AgentRoundResult = {
-            agentId: agent.id,
-            trades: result.executedTrades,
-            thinking: decision.thinking,
-            portfolio: result.portfolio,
-            focusToken: decision.focusToken,
-            researchSummary: decision.researchSummary,
-            researchSignals: decision.researchSignals,
-          };
-          this.record.state.lastRoundResults[agent.id] = roundResult;
-          this.emit("agent_trades", {
-            agentId: agent.id,
-            trades: result.executedTrades,
-            portfolio: result.portfolio,
-            focusToken: decision.focusToken,
-            researchSummary: decision.researchSummary,
-          });
-
-          this.refreshNansenStats();
-          this.record.state.nextUpdateAt = new Date(Date.now() + this.config.roundDelayMs).toISOString();
-          await sleep(this.config.roundDelayMs);
-        }
+        this.record.state.activeAgentId = null;
+        await Promise.all(this.agents.map((agent) => this.runAgentRound(agent.id, shared, round)));
 
         this.record.state.activeAgentId = null;
         this.captureEquityHistory(round);
@@ -204,6 +157,57 @@ export class ArenaOrchestrator {
         state: this.record.state,
       };
     }
+  }
+
+  private async runAgentRound(agentId: AgentId, shared: SharedMarketSnapshot, round: number) {
+    const agent = this.agents.find((candidate) => candidate.id === agentId);
+    if (!agent) {
+      throw new Error(`Unknown agent ${agentId}`);
+    }
+
+    this.emit("agent_start", { agentId: agent.id, name: agent.name });
+
+    const context = {
+      nansen: this.nansen,
+      claude: this.claude,
+      mcp: this.mcp,
+      shared,
+      portfolio: this.record.state.portfolios[agent.id],
+      round,
+    };
+    const marketData = await agent.gatherData(context);
+    this.emit("agent_data", { agentId: agent.id, dataSources: agent.dataSources });
+    const decision = await agent.decide(
+      {
+        marketData,
+        portfolio: this.record.state.portfolios[agent.id],
+      },
+      context,
+      round,
+    );
+    this.emit("agent_decision", { agentId: agent.id, thinking: decision.thinking, tradeCount: decision.trades.length });
+    const result = this.sim.executeTrades(this.record.state.portfolios[agent.id], decision.trades, shared.priceMap);
+    this.record.state.portfolios[agent.id] = result.portfolio;
+    this.record.state.tradeHistory[agent.id].push(...result.executedTrades);
+    this.record.state.thinkingHistory[agent.id].push(decision.thinking);
+    const roundResult: AgentRoundResult = {
+      agentId: agent.id,
+      trades: result.executedTrades,
+      thinking: decision.thinking,
+      portfolio: result.portfolio,
+      focusToken: decision.focusToken,
+      researchSummary: decision.researchSummary,
+      researchSignals: decision.researchSignals,
+    };
+    this.record.state.lastRoundResults[agent.id] = roundResult;
+    this.emit("agent_trades", {
+      agentId: agent.id,
+      trades: result.executedTrades,
+      portfolio: result.portfolio,
+      focusToken: decision.focusToken,
+      researchSummary: decision.researchSummary,
+    });
+    this.refreshNansenStats();
   }
 
   private initializeState(): ArenaState {

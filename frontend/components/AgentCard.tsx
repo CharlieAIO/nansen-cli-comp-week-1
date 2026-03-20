@@ -14,6 +14,7 @@ export function AgentCard({
 }) {
   const positions = portfolio.positions.slice(0, 3);
   const signals = result?.researchSignals?.slice(0, 3) ?? [];
+  const solPrice = portfolio.totalValueSol > 0 ? portfolio.totalValueUsd / portfolio.totalValueSol : 0;
 
   return (
     <article 
@@ -51,7 +52,7 @@ export function AgentCard({
           <div className={`returnBadge ${agent.returnPct >= 0 ? "up" : "down"}`}>
             {agent.returnPct >= 0 ? "+" : ""}{agent.returnPct.toFixed(2)}%
           </div>
-          <span className="cashLine">{portfolio.cashSol.toFixed(1)} SOL available</span>
+          <span className="cashLine">{portfolio.cashSol.toFixed(2)} SOL available</span>
         </div>
       </header>
 
@@ -82,15 +83,15 @@ export function AgentCard({
         <div className="positionList">
           {positions.length ? positions.map((position) => (
             <div key={position.tokenAddress} className="positionRow">
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+              <div className="positionMain">
                 <strong>{position.tokenSymbol}</strong>
-                <span style={{ fontSize: "10px", opacity: 0.6 }}>{position.tokenAmount.toFixed(2)}</span>
+                <span>{((position.currentValueUsd / (solPrice || 1)) || 0).toFixed(2)} SOL</span>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <strong style={{ display: "block" }}>${position.currentValueUsd.toFixed(0)}</strong>
-                <span className={position.currentValueUsd >= position.entryValueUsd ? "up" : "down"} style={{ fontSize: "10px" }}>
+              <div className="positionValue">
+                <strong>${position.currentValueUsd.toFixed(2)}</strong>
+                <span className={position.currentValueUsd >= position.entryValueUsd ? "up" : "down"}>
                   {position.entryValueUsd > 0
-                    ? `${(((position.currentValueUsd - position.entryValueUsd) / position.entryValueUsd) * 100).toFixed(1)}%`
+                    ? `${(((position.currentValueUsd - position.entryValueUsd) / position.entryValueUsd) * 100).toFixed(2)}%`
                     : "—"}
                 </span>
               </div>
@@ -104,7 +105,7 @@ export function AgentCard({
         <div className="positionList">
           {result?.trades.length ? result.trades.map((trade, index) => (
             <div key={`${trade.token_address}-${index}`} className="positionRow">
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+              <div className="positionMain">
                 <span style={{ 
                   fontSize: "9px", 
                   fontWeight: 800, 
@@ -117,9 +118,9 @@ export function AgentCard({
                 </span>
                 <strong>{trade.token_symbol}</strong>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <span style={{ display: "block", color: "var(--text)", fontWeight: 600 }}>{trade.amount_sol.toFixed(2)} SOL</span>
-                <span className="muted" style={{ fontSize: "10px" }}>@ ${trade.executedPriceUsd.toFixed(4)}</span>
+              <div className="positionValue">
+                <strong>{trade.amount_sol.toFixed(2)} SOL</strong>
+                <span className="muted">${trade.usdValue.toFixed(2)} @ ${trade.executedPriceUsd.toFixed(2)}</span>
               </div>
             </div>
           )) : <div className="positionRow" style={{ justifyContent: "center", opacity: 0.5 }}><span style={{ fontSize: "11px" }}>No recent executions</span></div>}
