@@ -22,48 +22,46 @@ export function EquityCurve({ state }: { state: ArenaState }) {
 
   return (
     <section className="panel sidePanel chartPanel">
-      <div className="agentCardDecoration">
-        <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
-      </div>
       <div className="sectionHead">
-        <h3>Equity curves</h3>
+        <h3>Equity Analysis</h3>
         <span className="pill">Round {state.round}</span>
       </div>
       <div className="chartWrap">
-        <ResponsiveContainer width="100%" height={240}>
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis 
               dataKey="round" 
-              stroke="#444" 
-              tick={{ fill: '#888', fontSize: 10, fontFamily: 'var(--font-mono)' }} 
+              stroke="var(--muted)" 
+              tick={{ fill: 'var(--muted)', fontSize: 9, fontFamily: 'var(--font-mono)' }} 
               tickLine={false} 
               axisLine={false} 
             />
             <YAxis 
-              stroke="#444" 
-              tick={{ fill: '#888', fontSize: 10, fontFamily: 'var(--font-mono)' }} 
+              stroke="var(--muted)" 
+              tick={{ fill: 'var(--muted)', fontSize: 9, fontFamily: 'var(--font-mono)' }} 
               tickLine={false} 
               axisLine={false} 
               domain={['auto', 'auto']} 
             />
             <Tooltip 
               contentStyle={{ 
-                background: "#000", 
-                border: "1px solid var(--accent)",
+                background: "var(--panel-strong)", 
+                border: "1px solid var(--border-bright)",
                 borderRadius: "0px",
                 fontFamily: 'var(--font-mono)',
-                fontSize: '11px'
+                fontSize: '10px'
               }} 
-              itemStyle={{ textTransform: 'uppercase' }}
+              itemStyle={{ textTransform: 'uppercase', padding: '2px 0' }}
             />
-            <Line dataKey="momentum" stroke="var(--momentum)" dot={false} strokeWidth={2} />
-            <Line dataKey="shadow" stroke="var(--shadow)" dot={false} strokeWidth={2} />
-            <Line dataKey="contrarian" stroke="var(--contrarian)" dot={false} strokeWidth={2} />
-            <Line dataKey="quant" stroke="var(--quant)" dot={false} strokeWidth={2} />
+            <Line dataKey="momentum" stroke="var(--momentum)" dot={false} strokeWidth={2} animationDuration={300} />
+            <Line dataKey="shadow" stroke="var(--shadow)" dot={false} strokeWidth={2} animationDuration={300} />
+            <Line dataKey="contrarian" stroke="var(--contrarian)" dot={false} strokeWidth={2} animationDuration={300} />
+            <Line dataKey="quant" stroke="var(--quant)" dot={false} strokeWidth={2} animationDuration={300} />
           </LineChart>
         </ResponsiveContainer>
       </div>
     </section>
   );
 }
+
