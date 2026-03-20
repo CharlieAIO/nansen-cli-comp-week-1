@@ -39,21 +39,15 @@ const defaultState: ArenaState = {
 export function useArenaStream() {
   const [arenaId, setArenaId] = useState<string | null>(null);
   const [state, setState] = useState<ArenaState>(defaultState);
-  const [isStarting, setIsStarting] = useState(false);
 
-  const startArena = useCallback(async (config: Partial<ArenaConfig>) => {
-    setIsStarting(true);
-    try {
-      const res = await fetch("/api/arena/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      const data = (await res.json()) as { arenaId: string };
-      setArenaId(data.arenaId);
-    } finally {
-      setIsStarting(false);
-    }
+  const ensureArenaStarted = useCallback(async (config: Partial<ArenaConfig>) => {
+    const res = await fetch("/api/arena/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config),
+    });
+    const data = (await res.json()) as { arenaId: string };
+    setArenaId(data.arenaId);
   }, []);
 
   useEffect(() => {
@@ -70,15 +64,7 @@ export function useArenaStream() {
         return;
       }
 
-      const res = await fetch("/api/arena/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "continuous", totalRounds: null, roundDelayMs: 12000 }),
-      });
-      const data = (await res.json()) as { arenaId: string };
-      if (!cancelled) {
-        setArenaId(data.arenaId);
-      }
+      await ensureArenaStarted({ mode: "continuous", totalRounds: null, roundDelayMs: 12000 });
     }
 
     void ensureArena();
@@ -86,12 +72,7 @@ export function useArenaStream() {
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  const stopArena = useCallback(async () => {
-    if (!arenaId) return;
-    await fetch(`/api/arena/stop/${arenaId}`, { method: "POST" });
-  }, [arenaId]);
+  }, [ensureArenaStarted]);
 
   useEffect(() => {
     if (!arenaId) return;
@@ -110,8 +91,5 @@ export function useArenaStream() {
     return () => source.close();
   }, [arenaId]);
 
-  return useMemo(
-    () => ({ arenaId, state, isStarting, startArena, stopArena }),
-    [arenaId, state, isStarting, startArena, stopArena],
-  );
+  return useMemo(() => ({ arenaId, state }), [arenaId, state]);
 }

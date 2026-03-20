@@ -13,7 +13,7 @@ import { useArenaStream } from "@/hooks/useArenaStream";
 const AGENT_ORDER = ["momentum", "shadow", "contrarian", "quant"] as const;
 
 export function ArenaView() {
-  const { arenaId, state, isStarting, startArena, stopArena } = useArenaStream();
+  const { arenaId, state } = useArenaStream();
   const [now, setNow] = useState<number | null>(null);
   const winner = state.phase === "complete" ? state.rankings[0] : null;
   const currentTime = now ?? new Date(state.startedAt).getTime();
@@ -47,21 +47,10 @@ export function ArenaView() {
           </p>
         </div>
         <div className="heroActions">
-          <div className="heroControlGroup">
-            <button
-              className="primaryButton"
-              onClick={() => startArena({ mode: "continuous", totalRounds: null, roundDelayMs: 12000 })}
-              disabled={isStarting || state.phase === "running"}
-            >
-              {isStarting ? "BOOTING_SEQUENCE..." : state.phase === "running" ? "ARENA_ACTIVE" : "RESTART_ENGINE"}
-            </button>
-            <button className="secondaryButton" onClick={stopArena} disabled={state.phase !== "running"}>
-              TERMINATE
-            </button>
-          </div>
           <div className="heroMeta">
             <span className="pill">INSTANCE: {arenaId ? arenaId.slice(0, 8) : "IDLE"}</span>
             <span className="pill">DATA_STREAM: {state.nansen.source.toUpperCase()}</span>
+            <span className="pill">ARENA_MODE: SHARED_CONTINUOUS</span>
           </div>
         </div>
       </section>
