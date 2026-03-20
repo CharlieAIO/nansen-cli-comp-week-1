@@ -5,9 +5,9 @@ import type { ArenaConfig, ArenaState } from "./types";
 import { ArenaOrchestrator } from "../services/arena";
 
 const defaultConfig: ArenaConfig = {
-  mode: "continuous",
-  totalRounds: null,
-  roundDelayMs: 12000,
+  mode: "fixed",
+  totalRounds: 100,
+  roundDelayMs: 8000,
   chain: "solana",
 };
 

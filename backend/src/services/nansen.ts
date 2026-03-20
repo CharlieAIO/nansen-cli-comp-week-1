@@ -282,23 +282,25 @@ export class NansenService {
 
   private estimateCredits(endpoint: string) {
     const costs: Record<string, number> = {
-      "smart-money/netflow": 1,
-      "token-screener": 1,
-      "/tgm/flows": 1,
-      "/tgm/dex-trades": 1,
-      "/tgm/pnl-leaderboard": 5,
-      "/profiler/address/transactions": 1,
-      "/profiler/wallet-pnl-summary": 1,
-      "/tgm/who-bought-sold": 1,
-      "/tgm/flow-intelligence": 1,
-      "/nansen-score/top-tokens": 1,
-      "/tgm/quant-scores": 2,
-      "/tgm/ohlcv": 1,
-      "/tgm/holders": 5,
+      "/smart-money/netflow": 50,
+      "smart-money/netflow": 50,
+      "/token-screener": 10,
+      "token-screener": 10,
+      "/tgm/pnl-leaderboard": 50,
+      "/tgm/flows": 10,
+      "/tgm/dex-trades": 10,
+      "/profiler/address/transactions": 10,
+      "/profiler/wallet-pnl-summary": 10,
+      "/tgm/who-bought-sold": 10,
+      "/tgm/flow-intelligence": 10,
+      "/nansen-score/top-tokens": 10,
+      "/tgm/quant-scores": 10,
+      "/tgm/ohlcv": 10,
+      "/tgm/holders": 50,
       "profiler/balance": 0,
       "nansen schema": 0,
     };
-    return costs[endpoint] ?? 1;
+    return costs[endpoint] ?? 10;
   }
 
   private async acquireRateLimitSlot() {

@@ -68,10 +68,6 @@ export class ArenaOrchestrator {
       this.record.state.phase = "running";
       this.emit("arena_start", { totalRounds: this.config.totalRounds, source: this.nansen.getSource() });
 
-      await this.nansen.cliSchema();
-      this.record.state.nansen.schemaLoaded = true;
-      this.emit("log", { message: "Nansen schema loaded", schemaSource: this.nansen.getSource() });
-
       if (this.mcp) {
         try {
           await this.mcp.connect();
@@ -250,7 +246,7 @@ export class ArenaOrchestrator {
         totalCalls: 0,
         totalCredits: 0,
         callLog: [],
-        schemaLoaded: false,
+        schemaLoaded: true,
         source: this.nansen.getSource(),
       },
       sharedMarket: {
@@ -264,8 +260,10 @@ export class ArenaOrchestrator {
   }
 
   private async loadSharedMarket(): Promise<SharedMarketSnapshot> {
-    const sharedNetflows = await this.nansen.cliSmartMoneyNetflow("solana", 20);
-    const sharedScreener = await this.nansen.cliTokenScreener("solana", "24h");
+    const [sharedNetflows, sharedScreener] = await Promise.all([
+      this.nansen.getSmartMoneyNetflow({ chain: "solana", limit: 20 }),
+      this.nansen.getTokenScreener({ chain: "solana", timeframe: "24h", limit: 20 }),
+    ]);
     const netflows = this.normalizeRecords(sharedNetflows);
     const screener = this.normalizeRecords(sharedScreener);
     const priceMap = this.sim.buildPriceMap(netflows, screener);

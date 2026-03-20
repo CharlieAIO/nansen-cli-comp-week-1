@@ -170,7 +170,9 @@ Strategy: ${agent.strategyPrompt}
 
 Use the Nansen tools to research the market, then output a JSON trading decision.
 Rules:
-- Call 2-4 Nansen tools that align with your strategy
+- Make at most 2 tool calls total (credits are limited)
+- Credit costs: token_screener=10, smart_money_netflow=50, pnl_leaderboard=50
+- Prefer token_screener (cheapest). Only call netflow/pnl_leaderboard if your strategy truly requires it
 - Only trade tokens present in the data you gather (use exact addresses)
 - Maximum allocation: ${(agent.maxAllocPct * 100).toFixed(0)}% of portfolio per position
 - After research, respond ONLY with valid JSON (no markdown, no explanation)`;
@@ -206,7 +208,7 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
       },
     ];
 
-    for (let iter = 0; iter < 8; iter++) {
+    for (let iter = 0; iter < 4; iter++) {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
