@@ -1,4 +1,4 @@
-import type { AgentPromptArgs, AgentRunContext } from "@/lib/types";
+import type { AgentDecisionArgs, AgentPromptArgs, AgentRunContext } from "@/lib/types";
 
 import { BaseAgent } from "@/services/agents/base";
 
@@ -24,6 +24,46 @@ export class ShadowAgent extends BaseAgent {
     const walletSummary = bestWallet ? await nansen.getWalletPnlSummary({ chain: "solana", address: bestWallet }) : null;
     const walletBalances = bestWallet ? await nansen.cliProfilerBalance(bestWallet, "solana") : { data: [] };
     return { leaderboard, walletTransactions, walletSummary, walletBalances: walletBalances.data ?? walletBalances };
+  }
+
+  decide({ marketData, portfolio }: AgentDecisionArgs) {
+    const balances = this.asRecords(marketData.walletBalances);
+    const transactions = this.asRecords(marketData.walletTransactions);
+    const walletSummary = this.asRecord(marketData.walletSummary);
+    const winRate = this.num(walletSummary?.win_rate);
+
+    const balanceTarget = [...balances].sort((a, b) => this.num(b.value_usd) - this.num(a.value_usd))[0];
+    const transactionTarget = [...transactions]
+      .filter((tx) => this.text(tx.side) === "BUY")
+      .sort((a, b) => this.num(b.value_usd) - this.num(a.value_usd))[0];
+    const target = balanceTarget ?? transactionTarget;
+
+    if (!target || winRate < 0.55) {
+      return {
+        thinking: "Shadow could not validate a strong enough wallet to mirror this round.",
+        trades: [],
+      };
+    }
+
+    const tokenAddress = this.text(target.token_address);
+    const tokenSymbol = this.text(target.token_symbol);
+    const trades = this.fullExitTrades(portfolio, tokenAddress);
+
+    if (!this.hasPosition(portfolio, tokenAddress)) {
+      trades.push({
+        action: "BUY",
+        token_symbol: tokenSymbol,
+        token_address: tokenAddress,
+        amount_sol: Number((portfolio.totalValueSol * 0.28).toFixed(2)),
+        confidence: 0.69,
+        reasoning: `${tokenSymbol} is the clearest current conviction in the copied wallet set.`,
+      });
+    }
+
+    return {
+      thinking: `Shadow follows the highest-conviction wallet exposure in ${tokenSymbol} after validating a ${Math.round(winRate * 100)}% win rate.`,
+      trades,
+    };
   }
 
   buildPrompt(args: AgentPromptArgs) {

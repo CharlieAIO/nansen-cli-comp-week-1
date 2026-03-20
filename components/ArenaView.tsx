@@ -81,6 +81,13 @@ export function ArenaView() {
         </div>
       </section>
 
+      {state.error ? (
+        <section className="panel statusBanner">
+          <span className="pill">Status</span>
+          <p>{state.error}</p>
+        </section>
+      ) : null}
+
       {winner ? <WinnerBanner winner={winner} arenaId={arenaId} /> : null}
 
       <section className="grid mainGrid">

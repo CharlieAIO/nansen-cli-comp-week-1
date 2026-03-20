@@ -55,9 +55,8 @@ export class ArenaOrchestrator {
       this.record.state.phase = "running";
       this.emit("arena_start", { totalRounds: this.config.totalRounds, source: this.nansen.getSource() });
 
-      const schema = await this.nansen.cliSchema();
+      await this.nansen.cliSchema();
       this.record.state.nansen.schemaLoaded = true;
-      const schemaSummary = JSON.stringify(schema, null, 2).slice(0, 1800);
       this.emit("log", { message: "Nansen schema loaded", schemaSource: this.nansen.getSource() });
 
       let round = this.record.state.round > 0 ? this.record.state.round + 1 : 1;
@@ -75,6 +74,11 @@ export class ArenaOrchestrator {
           topInflowToken: String(shared.netflows[0]?.token_symbol ?? "JUP"),
           topRetailToken: String(shared.screener[2]?.token_symbol ?? "BONK"),
         };
+        if (!shared.isLiveData) {
+          this.record.state.error = "Live Nansen data is unavailable, so trading is paused until credits or connectivity return.";
+        } else {
+          this.record.state.error = undefined;
+        }
 
         for (const agent of this.agents) {
           const portfolio = this.record.state.portfolios[agent.id];
@@ -92,19 +96,15 @@ export class ArenaOrchestrator {
           try {
             const marketData = await agent.gatherData({ nansen: this.nansen, shared });
             this.emit("agent_data", { agentId: agent.id, dataSources: agent.dataSources });
-            const prompt = agent.buildPrompt({
-              marketData,
-              portfolio: this.record.state.portfolios[agent.id],
-              round,
-              totalRounds: this.config.totalRounds,
-              otherAgents: this.getOtherAgentSummaries(agent.id),
-              schemaSummary,
-            });
-            const decision = await this.claude.getTradeDecision(prompt.system, prompt.user, {
-              agentId: agent.id,
-              marketData,
-              portfolio: this.record.state.portfolios[agent.id],
-            });
+            const decision = shared.isLiveData
+              ? agent.decide({
+                  marketData,
+                  portfolio: this.record.state.portfolios[agent.id],
+                })
+              : {
+                  thinking: "Live Nansen research is unavailable, so the agent holds instead of trading on fallback data.",
+                  trades: [],
+                };
             this.emit("agent_decision", { agentId: agent.id, thinking: decision.thinking, tradeCount: decision.trades.length });
             const result = this.sim.executeTrades(this.record.state.portfolios[agent.id], decision.trades, shared.priceMap);
             this.record.state.portfolios[agent.id] = result.portfolio;
@@ -231,8 +231,9 @@ export class ArenaOrchestrator {
     const screener = this.normalizeRecords(sharedScreener);
     const priceMap = this.sim.buildPriceMap(netflows, screener);
     const solPriceUsd = priceMap.get("SOL") ?? 142;
+    const isLiveData = this.nansen.getSource() === "live";
     this.refreshNansenStats();
-    return { netflows, screener, priceMap, solPriceUsd };
+    return { netflows, screener, priceMap, solPriceUsd, isLiveData };
   }
 
   private normalizeRecords(input: unknown): Array<Record<string, unknown>> {

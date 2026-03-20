@@ -183,7 +183,13 @@ export interface AgentMarketData {
 
 export interface TradingAgent extends AgentDefinition {
   gatherData(context: AgentRunContext): Promise<AgentMarketData>;
+  decide(args: AgentDecisionArgs): TradeDecision;
   buildPrompt(args: AgentPromptArgs): { system: string; user: string };
+}
+
+export interface AgentDecisionArgs {
+  marketData: AgentMarketData;
+  portfolio: AgentPortfolio;
 }
 
 export interface AgentPromptArgs {
@@ -205,4 +211,5 @@ export interface SharedMarketSnapshot {
   screener: Array<Record<string, unknown>>;
   priceMap: Map<string, number>;
   solPriceUsd: number;
+  isLiveData: boolean;
 }
