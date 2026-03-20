@@ -1,0 +1,369 @@
+:root {
+  --bg: #07111f;
+  --bg-soft: #0e1b2b;
+  --panel: rgba(11, 22, 38, 0.9);
+  --panel-strong: rgba(14, 28, 47, 0.96);
+  --border: rgba(140, 186, 255, 0.18);
+  --text: #eef6ff;
+  --muted: #9db2c7;
+  --gold: #ffc95c;
+  --momentum: #47d9ff;
+  --shadow: #7af0b2;
+  --contrarian: #ff8d63;
+  --quant: #b9a5ff;
+  --danger: #ff6d7a;
+  --font-display: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font-body);
+  background:
+    radial-gradient(circle at top left, rgba(71, 217, 255, 0.16), transparent 35%),
+    radial-gradient(circle at top right, rgba(255, 201, 92, 0.12), transparent 30%),
+    linear-gradient(180deg, #0a1525 0%, #07111f 45%, #050c15 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(117, 163, 220, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(117, 163, 220, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 85%);
+  pointer-events: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.shell {
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 20px 72px;
+}
+
+.panel {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  gap: 20px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+  padding: 28px;
+  border-radius: 28px;
+  margin-bottom: 24px;
+}
+
+.hero h1,
+.winnerBanner h2 {
+  margin: 12px 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.3rem, 4vw, 4.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+}
+
+.hero p,
+.winnerBanner p,
+.thinking,
+.commentaryPanel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.heroActions,
+.heroMeta,
+.commentaryMeta,
+.cardMetrics,
+.leaderRows,
+.feedRows,
+.tradeList,
+.tokenList,
+.sideGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.heroActions {
+  align-content: center;
+  justify-items: start;
+}
+
+.heroMeta {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-width: 180px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 180ms ease, opacity 180ms ease, border-color 180ms ease;
+}
+
+.primaryButton {
+  color: #07111f;
+  background: linear-gradient(135deg, #47d9ff 0%, #ffc95c 100%);
+  font-weight: 700;
+}
+
+.secondaryButton {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.primaryButton:not(:disabled):hover,
+.secondaryButton:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.overviewGrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 24px;
+}
+
+.statCard,
+.sidePanel,
+.winnerBanner,
+.agentCard {
+  border-radius: 24px;
+}
+
+.statCard {
+  padding: 20px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+}
+
+.statCard strong,
+.agentCard strong,
+.leaderRow strong,
+.commentaryMeta strong,
+.winnerBanner strong {
+  font-size: 1.25rem;
+}
+
+.statCard small {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+.mainGrid {
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+  align-items: start;
+}
+
+.cardsGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.agentCard,
+.sidePanel,
+.winnerBanner {
+  padding: 22px;
+}
+
+.agentCard {
+  position: relative;
+  overflow: hidden;
+  min-height: 320px;
+}
+
+.agentCard::after {
+  content: "";
+  position: absolute;
+  inset: auto -20% -40% auto;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12), transparent 68%);
+}
+
+.agentCard.active {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 20px 60px rgba(71, 217, 255, 0.16);
+}
+
+.agentCard header,
+.leaderRow,
+.tradeRow,
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.agentCard h2,
+.sectionHead h3 {
+  margin: 10px 0 0;
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+.returnBadge {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.returnBadge.up {
+  color: #7af0b2;
+  background: rgba(122, 240, 178, 0.12);
+}
+
+.returnBadge.down {
+  color: var(--danger);
+  background: rgba(255, 109, 122, 0.12);
+}
+
+.thinking {
+  min-height: 74px;
+}
+
+.tokenList {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tokenChip,
+.tradeRow,
+.leaderRow,
+.feedRow {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 12px;
+}
+
+.tokenChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.tradeRow,
+.leaderRow,
+.feedRow {
+  font-size: 14px;
+}
+
+.sidePanel {
+  background: var(--panel-strong);
+}
+
+.commentaryPanel {
+  border-color: rgba(255, 201, 92, 0.2);
+}
+
+.commentaryMeta {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.accent {
+  border-color: rgba(255, 201, 92, 0.22);
+  color: var(--gold);
+}
+
+.chartWrap {
+  height: 220px;
+}
+
+.liveFeed .feedRows {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.winnerBanner {
+  margin-bottom: 24px;
+  border-color: rgba(255, 201, 92, 0.22);
+  background: linear-gradient(135deg, rgba(255, 201, 92, 0.1), rgba(71, 217, 255, 0.08));
+}
+
+.muted {
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .shell {
+    padding: 18px 14px 56px;
+  }
+
+  .hero,
+  .mainGrid,
+  .overviewGrid,
+  .cardsGrid,
+  .tokenList,
+  .commentaryMeta,
+  .heroMeta {
+    grid-template-columns: 1fr;
+  }
+}
