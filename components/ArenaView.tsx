@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { AgentCard } from "@/components/AgentCard";
 import { CommentaryPanel } from "@/components/CommentaryPanel";
 import { EquityCurve } from "@/components/EquityCurve";
@@ -12,11 +14,22 @@ const AGENT_ORDER = ["momentum", "shadow", "contrarian", "quant"] as const;
 
 export function ArenaView() {
   const { arenaId, state, isStarting, startArena, stopArena } = useArenaStream();
+  const [now, setNow] = useState<number | null>(null);
   const winner = state.phase === "complete" ? state.rankings[0] : null;
-  const runtimeSeconds = Math.max(0, Math.floor((Date.now() - new Date(state.startedAt).getTime()) / 1000));
+  const currentTime = now ?? new Date(state.startedAt).getTime();
+  const runtimeSeconds = Math.max(0, Math.floor((currentTime - new Date(state.startedAt).getTime()) / 1000));
   const secondsToNextUpdate = state.nextUpdateAt
-    ? Math.max(0, Math.ceil((new Date(state.nextUpdateAt).getTime() - Date.now()) / 1000))
+    ? Math.max(0, Math.ceil((new Date(state.nextUpdateAt).getTime() - currentTime) / 1000))
     : null;
+
+  useEffect(() => {
+    setNow(Date.now());
+    const interval = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   return (
     <main className="shell">
