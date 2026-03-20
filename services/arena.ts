@@ -37,8 +37,8 @@ export class ArenaOrchestrator {
   private readonly agents = getAgents();
   readonly record: ArenaRecord;
 
-  constructor(private readonly arenaId: string, private readonly config: ArenaConfig) {
-    this.record = new ArenaRecord(this.initializeState());
+  constructor(private readonly arenaId: string, private readonly config: ArenaConfig, initialState?: ArenaState) {
+    this.record = new ArenaRecord(initialState ? structuredClone(initialState) : this.initializeState());
   }
 
   abort() {
@@ -49,6 +49,9 @@ export class ArenaOrchestrator {
 
   async runArena(): Promise<ArenaResult> {
     try {
+      this.record.state.aborted = false;
+      this.record.state.error = undefined;
+      this.record.state.completedAt = undefined;
       this.record.state.phase = "running";
       this.emit("arena_start", { totalRounds: this.config.totalRounds, source: this.nansen.getSource() });
 
@@ -57,7 +60,7 @@ export class ArenaOrchestrator {
       const schemaSummary = JSON.stringify(schema, null, 2).slice(0, 1800);
       this.emit("log", { message: "Nansen schema loaded", schemaSource: this.nansen.getSource() });
 
-      let round = 1;
+      let round = this.record.state.round > 0 ? this.record.state.round + 1 : 1;
       while (!this.record.state.aborted && (this.config.mode === "continuous" || round <= (this.config.totalRounds ?? 0))) {
         if (this.record.state.aborted) {
           break;
@@ -97,7 +100,11 @@ export class ArenaOrchestrator {
               otherAgents: this.getOtherAgentSummaries(agent.id),
               schemaSummary,
             });
-            const decision = await this.claude.getTradeDecision(prompt.system, prompt.user);
+            const decision = await this.claude.getTradeDecision(prompt.system, prompt.user, {
+              agentId: agent.id,
+              marketData,
+              portfolio: this.record.state.portfolios[agent.id],
+            });
             this.emit("agent_decision", { agentId: agent.id, thinking: decision.thinking, tradeCount: decision.trades.length });
             const result = this.sim.executeTrades(this.record.state.portfolios[agent.id], decision.trades, shared.priceMap);
             this.record.state.portfolios[agent.id] = result.portfolio;

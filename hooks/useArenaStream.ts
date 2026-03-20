@@ -54,17 +54,16 @@ export function useArenaStream() {
     let cancelled = false;
 
     async function ensureArena() {
-      const currentRes = await fetch("/api/arena/current", { cache: "no-store" });
-      const current = (await currentRes.json()) as { arenaId: string | null; state: ArenaState | null };
+      await ensureArenaStarted({ mode: "continuous", totalRounds: null, roundDelayMs: 12000 });
+
       if (cancelled) return;
 
+      const currentRes = await fetch("/api/arena/current", { cache: "no-store" });
+      const current = (await currentRes.json()) as { arenaId: string | null; state: ArenaState | null };
       if (current.arenaId && current.state) {
         setArenaId(current.arenaId);
         setState(current.state);
-        return;
       }
-
-      await ensureArenaStarted({ mode: "continuous", totalRounds: null, roundDelayMs: 12000 });
     }
 
     void ensureArena();

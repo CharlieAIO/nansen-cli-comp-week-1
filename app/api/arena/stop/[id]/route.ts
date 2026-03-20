@@ -6,7 +6,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
     return Response.json({ ok: false, message: "Arena not found" }, { status: 404 });
   }
 
-  instance.orchestrator.abort();
+  instance.orchestrator?.abort();
   setActiveArena(null);
   return Response.json({ ok: true });
 }
