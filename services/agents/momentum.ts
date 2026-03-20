@@ -1,4 +1,4 @@
-import type { AgentDecisionArgs, AgentPromptArgs, AgentRunContext } from "@/lib/types";
+import type { AgentDecisionArgs, AgentRunContext } from "@/lib/types";
 
 import { BaseAgent } from "@/services/agents/base";
 
@@ -45,7 +45,12 @@ export class MomentumAgent extends BaseAgent {
 
     const best = scored.sort((a, b) => b.score - a.score)[0];
     if (!best) {
-      return { thinking: "Momentum found no token with enough inflow data to act.", trades: [] };
+      return {
+        thinking: "Momentum found no token with enough inflow data to act.",
+        trades: [],
+        researchSummary: "No clean smart-money momentum setup emerged from the current Nansen reads.",
+        researchSignals: [],
+      };
     }
 
     const tokenAddress = this.text(best.token.token_address);
@@ -57,6 +62,13 @@ export class MomentumAgent extends BaseAgent {
       return {
         thinking: `${tokenSymbol} still leads smart-money inflow, but the move is losing force, so Momentum stays patient.`,
         trades: this.fullExitTrades(portfolio),
+        focusToken: tokenSymbol,
+        researchSummary: `Momentum rejected ${tokenSymbol} because inflows are no longer accelerating and DEX pressure is weak.`,
+        researchSignals: [
+          this.signal("Smart-money inflow", `$${Math.round(this.num(best.token.net_flow_24h_usd)).toLocaleString()}`, "positive"),
+          this.signal("Hourly flow trend", best.lateFlow > best.earlyFlow ? "accelerating" : "decelerating", best.lateFlow > best.earlyFlow ? "positive" : "negative"),
+          this.signal("DEX pressure", best.buyPressure >= 0 ? "buyers in control" : "sellers in control", best.buyPressure >= 0 ? "positive" : "negative"),
+        ],
       };
     }
 
@@ -75,14 +87,13 @@ export class MomentumAgent extends BaseAgent {
     return {
       thinking: `${tokenSymbol} leads on smart-money inflow, hourly flows are ${accelerating ? "accelerating" : "stable"}, and buy pressure remains ${positivePressure ? "supportive" : "mixed"}.`,
       trades,
-    };
-  }
-
-  buildPrompt(args: AgentPromptArgs) {
-    return {
-      system:
-        "You are MOMENTUM, an aggressive Solana trend follower. Concentrate capital into the strongest smart-money inflow. Return JSON only with thinking and trades.",
-      user: `${this.promptIntro(args)}\n\nMARKET DATA\n${JSON.stringify(args.marketData, null, 2)}\n\nReturn JSON with { thinking, trades[] } and use up to 50% allocation on the strongest signal.`,
+      focusToken: tokenSymbol,
+      researchSummary: `${tokenSymbol} wins Momentum's screen on raw inflow, improving flow cadence, and tradable DEX demand.`,
+      researchSignals: [
+        this.signal("Smart-money inflow", `$${Math.round(this.num(best.token.net_flow_24h_usd)).toLocaleString()}`, "positive"),
+        this.signal("Hourly flow trend", accelerating ? "accelerating" : "stable", accelerating ? "positive" : "neutral"),
+        this.signal("DEX pressure", best.buyPressure >= 0 ? "buyers in control" : "mixed", positivePressure ? "positive" : "neutral"),
+      ],
     };
   }
 }

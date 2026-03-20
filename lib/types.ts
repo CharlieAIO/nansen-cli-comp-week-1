@@ -33,6 +33,15 @@ export interface TradeInstruction {
 export interface TradeDecision {
   thinking: string;
   trades: TradeInstruction[];
+  focusToken?: string;
+  researchSummary?: string;
+  researchSignals?: ResearchSignal[];
+}
+
+export interface ResearchSignal {
+  label: string;
+  value: string;
+  tone?: "positive" | "neutral" | "negative";
 }
 
 export interface ExecutedTrade extends TradeInstruction {
@@ -84,6 +93,9 @@ export interface AgentRoundResult {
   trades: ExecutedTrade[];
   thinking: string;
   portfolio: AgentPortfolio;
+  focusToken?: string;
+  researchSummary?: string;
+  researchSignals?: ResearchSignal[];
 }
 
 export interface RoundSummary {
@@ -184,21 +196,11 @@ export interface AgentMarketData {
 export interface TradingAgent extends AgentDefinition {
   gatherData(context: AgentRunContext): Promise<AgentMarketData>;
   decide(args: AgentDecisionArgs): TradeDecision;
-  buildPrompt(args: AgentPromptArgs): { system: string; user: string };
 }
 
 export interface AgentDecisionArgs {
   marketData: AgentMarketData;
   portfolio: AgentPortfolio;
-}
-
-export interface AgentPromptArgs {
-  marketData: AgentMarketData;
-  portfolio: AgentPortfolio;
-  round: number;
-  totalRounds: number | null;
-  otherAgents: AgentSummary[];
-  schemaSummary: string;
 }
 
 export interface AgentRunContext {

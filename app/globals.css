@@ -320,9 +320,16 @@ select {
   letter-spacing: 0.05em;
 }
 
+.focusToken {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
 .cardMetrics {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   padding: 16px 0;
   border-top: 1px solid var(--border);
@@ -342,10 +349,92 @@ select {
   border: 1px solid var(--border);
 }
 
+.researchArea,
+.positionsArea,
+.tradesArea,
+.decisionArea {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.researchSummary {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 13px;
+}
+
+.signalGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.signalCard {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px;
+  min-height: 76px;
+}
+
+.signalCard span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.signalCard strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.signalCard.positive {
+  border-color: rgba(0, 255, 136, 0.25);
+}
+
+.signalCard.negative {
+  border-color: rgba(255, 51, 68, 0.25);
+}
+
+.signalCard.empty {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+}
+
 .tokenList {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+}
+
+.positionList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+}
+
+.positionRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--panel);
+}
+
+.positionRow strong,
+.positionRow span {
+  display: block;
+}
+
+.positionRow span {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 4px;
 }
 
 .tokenChip {
@@ -377,9 +466,22 @@ select {
 }
 
 .feedEventName {
-  flex-grow: 1;
   color: var(--accent);
   letter-spacing: 0.05em;
+  text-transform: capitalize;
+}
+
+.feedBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-grow: 1;
+}
+
+.feedDetail {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: none;
 }
 
 .feedDot {
@@ -415,6 +517,26 @@ select {
   flex-direction: column;
   gap: 1px;
   background: var(--border);
+}
+
+.tradeRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--panel);
+  padding: 12px 14px;
+}
+
+.tradeMain,
+.tradeMeta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tradeMeta {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .leaderRow {
@@ -462,6 +584,56 @@ select {
   height: 240px;
   border: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.2);
+}
+
+.commentarySubtext {
+  margin: -8px 0 20px;
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+.commentaryCallout {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-bright);
+}
+
+.commentaryCallout p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.nansenCallList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border);
+}
+
+.nansenCallRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--panel);
+}
+
+.nansenCallRow strong,
+.nansenCallRow span {
+  display: block;
+}
+
+.nansenCallRow strong {
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.nansenCallRow span {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 4px;
 }
 
 .winnerBanner {
@@ -535,6 +707,13 @@ select {
   .winnerInfo {
     flex-direction: column;
     text-align: center;
+  }
+
+  .signalGrid,
+  .cardMetrics,
+  .tradeMain,
+  .tradeMeta {
+    grid-template-columns: 1fr;
   }
 }
 

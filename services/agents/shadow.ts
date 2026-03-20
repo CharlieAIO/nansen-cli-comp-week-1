@@ -1,4 +1,4 @@
-import type { AgentDecisionArgs, AgentPromptArgs, AgentRunContext } from "@/lib/types";
+import type { AgentDecisionArgs, AgentRunContext } from "@/lib/types";
 
 import { BaseAgent } from "@/services/agents/base";
 
@@ -42,6 +42,10 @@ export class ShadowAgent extends BaseAgent {
       return {
         thinking: "Shadow could not validate a strong enough wallet to mirror this round.",
         trades: [],
+        researchSummary: "The copied wallets did not show a high-confidence token with enough PnL validation.",
+        researchSignals: [
+          this.signal("Wallet win rate", `${Math.round(winRate * 100)}%`, winRate >= 0.55 ? "positive" : "negative"),
+        ],
       };
     }
 
@@ -63,14 +67,13 @@ export class ShadowAgent extends BaseAgent {
     return {
       thinking: `Shadow follows the highest-conviction wallet exposure in ${tokenSymbol} after validating a ${Math.round(winRate * 100)}% win rate.`,
       trades,
-    };
-  }
-
-  buildPrompt(args: AgentPromptArgs) {
-    return {
-      system:
-        "You are SHADOW, a copy-trading AI. Follow proven wallets, keep sizing moderate, and return JSON only with thinking and trades.",
-      user: `${this.promptIntro(args)}\n\nMARKET DATA\n${JSON.stringify(args.marketData, null, 2)}\n\nPick the best wallet to mirror and size trades up to 30% per position.`,
+      focusToken: tokenSymbol,
+      researchSummary: `${tokenSymbol} is where the best tracked wallet currently shows the clearest conviction.`,
+      researchSignals: [
+        this.signal("Wallet win rate", `${Math.round(winRate * 100)}%`, "positive"),
+        this.signal("Top wallet holding", `$${Math.round(this.num(balanceTarget?.value_usd ?? target.value_usd)).toLocaleString()}`, "positive"),
+        this.signal("Recent copy signal", transactionTarget ? this.text(transactionTarget.token_symbol, tokenSymbol) : tokenSymbol, "neutral"),
+      ],
     };
   }
 }

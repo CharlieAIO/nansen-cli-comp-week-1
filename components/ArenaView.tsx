@@ -7,6 +7,7 @@ import { CommentaryPanel } from "@/components/CommentaryPanel";
 import { EquityCurve } from "@/components/EquityCurve";
 import { Leaderboard } from "@/components/Leaderboard";
 import { LiveFeed } from "@/components/LiveFeed";
+import { NansenActivityPanel } from "@/components/NansenActivityPanel";
 import { WinnerBanner } from "@/components/WinnerBanner";
 import { useArenaStream } from "@/hooks/useArenaStream";
 
@@ -110,6 +111,7 @@ export function ArenaView() {
 
         <div className="grid sideGrid">
           <Leaderboard rankings={state.rankings} />
+          <NansenActivityPanel calls={state.nansen.callLog} />
           <CommentaryPanel commentary={state.commentaries.at(-1)} />
           <EquityCurve state={state} />
           <LiveFeed events={state.log.slice(-14).reverse()} />

@@ -1,4 +1,4 @@
-import type { AgentDecisionArgs, AgentPromptArgs, AgentRunContext } from "@/lib/types";
+import type { AgentDecisionArgs, AgentRunContext } from "@/lib/types";
 
 import { BaseAgent } from "@/services/agents/base";
 
@@ -39,6 +39,12 @@ export class ContrarianAgent extends BaseAgent {
       return {
         thinking: "Contrarian sees retail euphoria without enough smart-money support, so it avoids new risk.",
         trades: this.fullExitTrades(portfolio),
+        researchSummary: "No token showed a positive enough smart-money versus retail divergence to justify entry.",
+        researchSignals: candidates.slice(0, 3).map((candidate) => this.signal(
+          this.text(candidate.token.token_symbol, "Token"),
+          `edge ${candidate.edge.toFixed(2)}`,
+          candidate.edge > 0 ? "positive" : "negative",
+        )),
       };
     }
 
@@ -60,14 +66,13 @@ export class ContrarianAgent extends BaseAgent {
     return {
       thinking: `${tokenSymbol} has the cleanest divergence: smart money is stronger than retail participation while the crowd is less overheated.`,
       trades,
-    };
-  }
-
-  buildPrompt(args: AgentPromptArgs) {
-    return {
-      system:
-        "You are CONTRARIAN, a skeptical trading AI. Fade retail euphoria, buy quiet smart-money accumulation, and return JSON only.",
-      user: `${this.promptIntro(args)}\n\nMARKET DATA\n${JSON.stringify(args.marketData, null, 2)}\n\nLook for the largest divergence between retail activity and smart-money flows. Size up to 25%.`,
+      focusToken: tokenSymbol,
+      researchSummary: `${tokenSymbol} stood out because smart-money share beat retail share while retail intensity stayed comparatively lower.`,
+      researchSignals: [
+        this.signal("Smart-money share", `${Math.round(best.smartMoneyPct * 100)}%`, "positive"),
+        this.signal("Retail share", `${Math.round(best.retailPct * 100)}%`, best.retailPct < best.smartMoneyPct ? "neutral" : "negative"),
+        this.signal("Retail heat", `${Math.round(best.retailScore)}`, best.retailScore < 70 ? "positive" : "negative"),
+      ],
     };
   }
 }

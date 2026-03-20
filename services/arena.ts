@@ -3,7 +3,6 @@ import type {
   AgentId,
   AgentPortfolio,
   AgentRoundResult,
-  AgentSummary,
   ArenaConfig,
   ArenaEvent,
   ArenaResult,
@@ -115,9 +114,18 @@ export class ArenaOrchestrator {
               trades: result.executedTrades,
               thinking: decision.thinking,
               portfolio: result.portfolio,
+              focusToken: decision.focusToken,
+              researchSummary: decision.researchSummary,
+              researchSignals: decision.researchSignals,
             };
             this.record.state.lastRoundResults[agent.id] = roundResult;
-            this.emit("agent_trades", { agentId: agent.id, trades: result.executedTrades, portfolio: result.portfolio });
+            this.emit("agent_trades", {
+              agentId: agent.id,
+              trades: result.executedTrades,
+              portfolio: result.portfolio,
+              focusToken: decision.focusToken,
+              researchSummary: decision.researchSummary,
+            });
           } catch (error) {
             const message = error instanceof Error ? error.message : "Unknown agent error";
             this.emit("agent_error", { agentId: agent.id, message });
@@ -280,11 +288,6 @@ export class ArenaOrchestrator {
         biggest_retail_fomo_token: this.record.state.sharedMarket.topRetailToken,
       },
     };
-  }
-
-  private getOtherAgentSummaries(currentAgentId: AgentId): AgentSummary[] {
-    this.updateRankings();
-    return this.record.state.rankings.filter((agent) => agent.id !== currentAgentId);
   }
 
   private updateRankings() {

@@ -11,6 +11,7 @@ export function CommentaryPanel({ commentary }: { commentary?: CommentaryOutput 
         <span className="pill accent">Latest</span>
       </div>
       <p className="commentaryText">{commentary?.round_commentary ?? "Waiting for commentary from the first completed round."}</p>
+      {commentary?.tension_narrative ? <p className="commentarySubtext">{commentary.tension_narrative}</p> : null}
       <div className="commentaryMeta">
         <div>
           <span className="label">MVP</span>
@@ -21,6 +22,12 @@ export function CommentaryPanel({ commentary }: { commentary?: CommentaryOutput 
           <strong>{commentary?.prediction ?? "-"}</strong>
         </div>
       </div>
+      {commentary?.most_interesting_trade ? (
+        <div className="commentaryCallout">
+          <span className="label">Most interesting trade</span>
+          <p>{commentary.most_interesting_trade}</p>
+        </div>
+      ) : null}
     </section>
   );
 }

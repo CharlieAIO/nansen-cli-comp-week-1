@@ -1,4 +1,4 @@
-import type { AgentDecisionArgs, AgentPortfolio, AgentPromptArgs, TradeDecision, TradeInstruction, TradingAgent } from "@/lib/types";
+import type { AgentDecisionArgs, AgentPortfolio, ResearchSignal, TradeDecision, TradeInstruction, TradingAgent } from "@/lib/types";
 
 export abstract class BaseAgent implements TradingAgent {
   abstract id: TradingAgent["id"];
@@ -10,13 +10,6 @@ export abstract class BaseAgent implements TradingAgent {
 
   abstract gatherData(context: Parameters<TradingAgent["gatherData"]>[0]): ReturnType<TradingAgent["gatherData"]>;
   abstract decide(args: AgentDecisionArgs): TradeDecision;
-
-  protected promptIntro(args: AgentPromptArgs) {
-    const roundLabel = args.totalRounds ? `${args.round}/${args.totalRounds}` : `${args.round} (continuous)`;
-    return `ROUND ${roundLabel}\n\nSCHEMA\n${args.schemaSummary}\n\nPORTFOLIO\nCash: ${args.portfolio.cashSol.toFixed(2)} SOL\nPositions: ${JSON.stringify(args.portfolio.positions)}\nTotal Value: ${args.portfolio.totalValueSol.toFixed(2)} SOL\nReturn: ${args.portfolio.returnPct.toFixed(2)}%\n\nCOMPETITION\n${args.otherAgents.map((agent) => `${agent.name}: ${agent.returnPct.toFixed(1)}%`).join("\n")}`;
-  }
-
-  abstract buildPrompt(args: AgentPromptArgs): { system: string; user: string };
 
   protected asRecords(input: unknown): Array<Record<string, unknown>> {
     if (!Array.isArray(input)) {
@@ -58,5 +51,9 @@ export abstract class BaseAgent implements TradingAgent {
 
   protected hasPosition(portfolio: AgentPortfolio, tokenAddress: string) {
     return portfolio.positions.some((position) => position.tokenAddress === tokenAddress);
+  }
+
+  protected signal(label: string, value: string, tone?: ResearchSignal["tone"]): ResearchSignal {
+    return { label, value, tone };
   }
 }

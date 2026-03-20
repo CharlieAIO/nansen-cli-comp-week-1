@@ -1,4 +1,4 @@
-import type { AgentDecisionArgs, AgentPromptArgs, AgentRunContext, TradeInstruction } from "@/lib/types";
+import type { AgentDecisionArgs, AgentRunContext, TradeInstruction } from "@/lib/types";
 
 import { BaseAgent } from "@/services/agents/base";
 
@@ -81,14 +81,15 @@ export class QuantAgent extends BaseAgent {
         ? `Quant keeps a diversified basket of ${selected.map((candidate) => this.text(candidate.token.token_symbol)).join(", ")} based on score, trend, and holder structure.`
         : "Quant sees no basket with a strong enough composite score and trims risk.",
       trades,
-    };
-  }
-
-  buildPrompt(args: AgentPromptArgs) {
-    return {
-      system:
-        "You are QUANT, a systematic Solana trading AI. Prefer diversified baskets, respect holder concentration, and return JSON only.",
-      user: `${this.promptIntro(args)}\n\nMARKET DATA\n${JSON.stringify(args.marketData, null, 2)}\n\nBuild or rebalance a diversified basket with trades capped at 15% each.`,
+      focusToken: selected[0] ? this.text(selected[0].token.token_symbol) : undefined,
+      researchSummary: selected.length
+        ? `Quant ranked tokens on composite score, short-term trend, and holder concentration before rebalancing the basket.`
+        : "Quant found no basket clearing its composite threshold, so it reduces exposure.",
+      researchSignals: (selected.length ? selected : candidates.slice(0, 3)).map((candidate) => this.signal(
+        this.text(candidate.token.token_symbol, "Token"),
+        `score ${candidate.composite.toFixed(1)} | trend ${(candidate.trend * 100).toFixed(1)}%`,
+        candidate.composite > 40 ? "positive" : "neutral",
+      )),
     };
   }
 }
