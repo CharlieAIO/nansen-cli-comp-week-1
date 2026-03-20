@@ -2,24 +2,6 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import type { NansenCall, NetflowFilters, PnlLeaderboardFilters, TokenScreenerFilters } from "../lib/types";
-import {
-  getMockBalances,
-  getMockDexTrades,
-  getMockFlowIntelligence,
-  getMockFlows,
-  getMockHolders,
-  getMockNetflows,
-  getMockOhlcv,
-  getMockPnlLeaderboard,
-  getMockPnlSummary,
-  getMockQuantScores,
-  getMockSchema,
-  getMockScreener,
-  getMockTopScores,
-  getMockTransactions,
-  getMockWhoBoughtSold,
-  nextTick,
-} from "./mock-data";
 
 const execFileAsync = promisify(execFile);
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -38,7 +20,7 @@ export class NansenService {
   private readonly apiKey = process.env.NANSEN_API_KEY;
   private readonly baseUrl = "https://api.nansen.ai/api/v1";
   private readonly callLog: NansenCall[] = [];
-  private source: "live" | "mock" = this.apiKey ? "live" : "mock";
+  private source: "live" | "error" = this.apiKey ? "live" : "error";
 
   getSource() {
     return this.source;
@@ -57,19 +39,18 @@ export class NansenService {
   }
 
   logMcpCall(toolName: string, args: unknown, creditCost = 1) {
+    this.source = "live";
     this.logCall(toolName, args, 200, 0, creditCost, "mcp");
   }
 
   async cliSchema() {
-    return this.execCli(["schema", "--pretty"], "nansen schema", getMockSchema());
+    return this.execCli(["schema", "--pretty"], "nansen schema");
   }
 
   async cliSmartMoneyNetflow(chain: string, limit: number) {
-    nextTick();
     return this.execCli(
       ["research", "smart-money", "netflow", "--chain", chain, "--limit", String(limit)],
       "smart-money/netflow",
-      { data: getMockNetflows().slice(0, limit) },
     );
   }
 
@@ -77,7 +58,6 @@ export class NansenService {
     return this.execCli(
       ["research", "token", "screener", "--chain", chain, "--timeframe", timeframe],
       "token-screener",
-      { data: getMockScreener() },
     );
   }
 
@@ -85,60 +65,59 @@ export class NansenService {
     return this.execCli(
       ["research", "profiler", "balance", "--address", address, "--chain", chain],
       "profiler/balance",
-      { data: getMockBalances(address) },
     );
   }
 
   async getSmartMoneyNetflow(params: Record<string, unknown>) {
-    return this.post("/smart-money/netflow", params, getMockNetflows());
+    return this.post("/smart-money/netflow", params);
   }
 
   async getTokenScreener(params: Record<string, unknown>) {
-    return this.post("/token-screener", params, getMockScreener());
+    return this.post("/token-screener", params);
   }
 
   async getTokenFlows(params: { chain: string; tokenAddress: string; timeframe?: string }) {
-    return this.post("/tgm/flows", params, getMockFlows(params.tokenAddress));
+    return this.post("/tgm/flows", params);
   }
 
   async getTokenDexTrades(params: { chain: string; tokenAddress: string; limit?: number }) {
-    return this.post("/tgm/dex-trades", params, getMockDexTrades(params.tokenAddress));
+    return this.post("/tgm/dex-trades", params);
   }
 
   async getPnlLeaderboard(params: { chain: string; tokenAddress: string }) {
-    return this.post("/tgm/pnl-leaderboard", params, getMockPnlLeaderboard(params.tokenAddress));
+    return this.post("/tgm/pnl-leaderboard", params);
   }
 
   async getWalletTransactions(params: { chain: string; addresses: string[]; limit?: number }) {
-    return this.post("/profiler/address/transactions", params, getMockTransactions(params.addresses));
+    return this.post("/profiler/address/transactions", params);
   }
 
   async getWalletPnlSummary(params: { chain: string; address: string }) {
-    return this.post("/profiler/wallet-pnl-summary", params, getMockPnlSummary(params.address));
+    return this.post("/profiler/wallet-pnl-summary", params);
   }
 
   async getWhoBoughtSold(params: { chain: string; tokenAddress: string; buyOrSell: "BUY" | "SELL" }) {
-    return this.post("/tgm/who-bought-sold", params, getMockWhoBoughtSold(params.tokenAddress, params.buyOrSell));
+    return this.post("/tgm/who-bought-sold", params);
   }
 
   async getTokenFlowIntelligence(params: { chain: string; tokenAddress: string; timeframe?: string }) {
-    return this.post("/tgm/flow-intelligence", params, getMockFlowIntelligence(params.tokenAddress));
+    return this.post("/tgm/flow-intelligence", params);
   }
 
   async getNansenScoreTopTokens() {
-    return this.post("/nansen-score/top-tokens", {}, getMockTopScores());
+    return this.post("/nansen-score/top-tokens", {});
   }
 
   async getTokenQuantScores(params: { chain: string; tokenAddress: string }) {
-    return this.post("/tgm/quant-scores", params, getMockQuantScores(params.tokenAddress));
+    return this.post("/tgm/quant-scores", params);
   }
 
   async getTokenOhlcv(params: { chain: string; tokenAddress: string }) {
-    return this.post("/tgm/ohlcv", params, getMockOhlcv(params.tokenAddress));
+    return this.post("/tgm/ohlcv", params);
   }
 
   async getTokenHolders(params: { chain: string; tokenAddress: string; limit?: number }) {
-    return this.post("/tgm/holders", params, getMockHolders(params.tokenAddress));
+    return this.post("/tgm/holders", params);
   }
 
   async postTokenScreener(filters: TokenScreenerFilters): Promise<unknown[]> {
@@ -157,7 +136,7 @@ export class NansenService {
       order_by: [{ field: filters.sort_by ?? "volume", direction: "DESC" }],
     };
     const result = await this.postEndpoint("/token-screener", body);
-    if (!result || !Array.isArray(result)) return [];
+    if (!Array.isArray(result)) throw new NansenApiError("/token-screener", 500, { error: "Unexpected response shape" });
     return result as unknown[];
   }
 
@@ -174,12 +153,12 @@ export class NansenService {
       order_by: [{ field: "net_flow_7d_usd", direction: "DESC" }],
     };
     const result = await this.postEndpoint("/smart-money/netflow", body);
-    if (!result || !Array.isArray(result)) return [];
+    if (!Array.isArray(result)) throw new NansenApiError("/smart-money/netflow", 500, { error: "Unexpected response shape" });
     return result as unknown[];
   }
 
   async postPnlLeaderboard(filters: PnlLeaderboardFilters): Promise<unknown[]> {
-    if (!filters.tokenAddress) return [];
+    if (!filters.tokenAddress) throw new Error("PnL leaderboard requires tokenAddress");
     const body = {
       chain: "solana",
       token_address: filters.tokenAddress,
@@ -194,41 +173,55 @@ export class NansenService {
       },
     };
     const result = await this.postEndpoint("/tgm/pnl-leaderboard", body);
-    if (!result || !Array.isArray(result)) return [];
+    if (!Array.isArray(result)) throw new NansenApiError("/tgm/pnl-leaderboard", 500, { error: "Unexpected response shape" });
     return result as unknown[];
   }
 
   private async postEndpoint(path: string, body: unknown): Promise<unknown> {
-    const apiKey = process.env.NANSEN_API_KEY;
-    if (!apiKey) return null;
+    if (!this.apiKey) {
+      this.source = "error";
+      throw new Error("NANSEN_API_KEY is not configured");
+    }
+    const start = Date.now();
+    await this.acquireRateLimitSlot();
     try {
       const res = await fetch(`https://api.nansen.ai/api/v1${path}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "apiKey": apiKey,
+          apiKey: this.apiKey,
         },
         body: JSON.stringify(body),
       });
-      if (!res.ok) return null;
+      const elapsed = Date.now() - start;
       const data = await res.json();
+      this.logCall(path, body, res.status, elapsed, this.estimateCredits(path), "rest");
+      if (!res.ok) {
+        this.source = "error";
+        throw new NansenApiError(path, res.status, data);
+      }
+      this.source = "live";
       return (data as { data?: unknown })?.data ?? data ?? null;
-    } catch {
-      return null;
+    } catch (error) {
+      if (error instanceof NansenApiError) {
+        throw error;
+      }
+      this.source = "error";
+      throw new Error(`Nansen REST request failed for ${path}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private async post(endpoint: string, body: unknown, fallback: unknown) {
+  private async post(endpoint: string, body: unknown) {
     const start = Date.now();
     if (!this.apiKey) {
-      this.logCall(endpoint, body, 200, Date.now() - start, this.estimateCredits(endpoint), "mock");
-      return fallback;
+      this.source = "error";
+      throw new Error("NANSEN_API_KEY is not configured");
     }
 
     await this.acquireRateLimitSlot();
 
     try {
-      const res = await fetch(`${this.baseUrl}${endpoint}`, {
+      const res = await fetch(`https://api.nansen.ai/api/v1${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -241,21 +234,27 @@ export class NansenService {
       this.logCall(endpoint, body, res.status, elapsed, this.estimateCredits(endpoint), "rest");
 
       if (!res.ok) {
-        this.source = "mock";
-        return fallback;
+        this.source = "error";
+        throw new NansenApiError(endpoint, res.status, json);
       }
 
       this.source = "live";
       return (json as { data?: unknown }).data ?? json;
-    } catch {
-      this.logCall(endpoint, body, 200, Date.now() - start, this.estimateCredits(endpoint), "mock");
-      this.source = "mock";
-      return fallback;
+    } catch (error) {
+      if (error instanceof NansenApiError) {
+        throw error;
+      }
+      this.source = "error";
+      throw new Error(`Nansen request failed for ${endpoint}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private async execCli(args: string[], endpoint: string, fallback: unknown) {
+  private async execCli(args: string[], endpoint: string) {
     const start = Date.now();
+    if (!this.apiKey) {
+      this.source = "error";
+      throw new Error("NANSEN_API_KEY is not configured");
+    }
     try {
       await this.acquireRateLimitSlot();
       const { stdout } = await execFileAsync("nansen", args, { env: process.env });
@@ -264,11 +263,9 @@ export class NansenService {
       this.source = "live";
       this.logCall(endpoint, args, 200, elapsed, this.estimateCredits(endpoint), "cli");
       return parsed;
-    } catch {
-      const elapsed = Date.now() - start;
-      this.source = "mock";
-      this.logCall(endpoint, args, 200, elapsed, this.estimateCredits(endpoint), "mock");
-      return fallback;
+    } catch (error) {
+      this.source = "error";
+      throw new Error(`Nansen CLI request failed for ${endpoint}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

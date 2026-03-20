@@ -66,16 +66,17 @@ export class ArenaOrchestrator {
       this.record.state.error = undefined;
       this.record.state.completedAt = undefined;
       this.record.state.phase = "running";
+      this.claude.ensureConfigured();
+      if (!process.env.NANSEN_API_KEY) {
+        throw new Error("NANSEN_API_KEY is not configured");
+      }
       this.emit("arena_start", { totalRounds: this.config.totalRounds, source: this.nansen.getSource() });
 
-      if (this.mcp) {
-        try {
-          await this.mcp.connect();
-          this.emit("log", { message: `MCP connected — ${this.mcp.tools.length} tools available` });
-        } catch (err) {
-          this.emit("log", { message: `MCP connection failed, falling back to REST: ${err instanceof Error ? err.message : err}` });
-        }
+      if (!this.mcp) {
+        throw new Error("Nansen MCP client could not be initialized");
       }
+      await this.mcp.connect();
+      this.emit("log", { message: `MCP connected — ${this.mcp.tools.length} tools available` });
 
       let round = this.record.state.round > 0 ? this.record.state.round + 1 : 1;
       while (!this.record.state.aborted && (this.config.mode === "continuous" || round <= (this.config.totalRounds ?? 0))) {
@@ -93,10 +94,9 @@ export class ArenaOrchestrator {
           topRetailToken: String(shared.screener[2]?.token_symbol ?? "BONK"),
         };
         if (!shared.isLiveData) {
-          this.record.state.error = "Live Nansen data is unavailable, so trading is paused until credits or connectivity return.";
-        } else {
-          this.record.state.error = undefined;
+          throw new Error("Live Nansen data is unavailable");
         }
+        this.record.state.error = undefined;
 
         for (const agent of this.agents) {
           const portfolio = this.record.state.portfolios[agent.id];
@@ -111,52 +111,42 @@ export class ArenaOrchestrator {
           this.record.state.activeAgentId = agent.id;
           this.emit("agent_start", { agentId: agent.id, name: agent.name });
 
-          try {
-            const context = {
-              nansen: this.nansen,
-              claude: this.claude,
-              mcp: this.mcp,
-              shared,
-              portfolio: this.record.state.portfolios[agent.id],
-              round,
-            };
-            const marketData = await agent.gatherData(context);
-            this.emit("agent_data", { agentId: agent.id, dataSources: agent.dataSources });
-            const decision = shared.isLiveData
-              ? await agent.decide({
-                  marketData,
-                  portfolio: this.record.state.portfolios[agent.id],
-                }, context, round)
-              : {
-                  thinking: "Live Nansen research is unavailable, so the agent holds instead of trading on fallback data.",
-                  trades: [],
-                };
-            this.emit("agent_decision", { agentId: agent.id, thinking: decision.thinking, tradeCount: decision.trades.length });
-            const result = this.sim.executeTrades(this.record.state.portfolios[agent.id], decision.trades, shared.priceMap);
-            this.record.state.portfolios[agent.id] = result.portfolio;
-            this.record.state.tradeHistory[agent.id].push(...result.executedTrades);
-            this.record.state.thinkingHistory[agent.id].push(decision.thinking);
-            const roundResult: AgentRoundResult = {
-              agentId: agent.id,
-              trades: result.executedTrades,
-              thinking: decision.thinking,
-              portfolio: result.portfolio,
-              focusToken: decision.focusToken,
-              researchSummary: decision.researchSummary,
-              researchSignals: decision.researchSignals,
-            };
-            this.record.state.lastRoundResults[agent.id] = roundResult;
-            this.emit("agent_trades", {
-              agentId: agent.id,
-              trades: result.executedTrades,
-              portfolio: result.portfolio,
-              focusToken: decision.focusToken,
-              researchSummary: decision.researchSummary,
-            });
-          } catch (error) {
-            const message = error instanceof Error ? error.message : "Unknown agent error";
-            this.emit("agent_error", { agentId: agent.id, message });
-          }
+          const context = {
+            nansen: this.nansen,
+            claude: this.claude,
+            mcp: this.mcp,
+            shared,
+            portfolio: this.record.state.portfolios[agent.id],
+            round,
+          };
+          const marketData = await agent.gatherData(context);
+          this.emit("agent_data", { agentId: agent.id, dataSources: agent.dataSources });
+          const decision = await agent.decide({
+            marketData,
+            portfolio: this.record.state.portfolios[agent.id],
+          }, context, round);
+          this.emit("agent_decision", { agentId: agent.id, thinking: decision.thinking, tradeCount: decision.trades.length });
+          const result = this.sim.executeTrades(this.record.state.portfolios[agent.id], decision.trades, shared.priceMap);
+          this.record.state.portfolios[agent.id] = result.portfolio;
+          this.record.state.tradeHistory[agent.id].push(...result.executedTrades);
+          this.record.state.thinkingHistory[agent.id].push(decision.thinking);
+          const roundResult: AgentRoundResult = {
+            agentId: agent.id,
+            trades: result.executedTrades,
+            thinking: decision.thinking,
+            portfolio: result.portfolio,
+            focusToken: decision.focusToken,
+            researchSummary: decision.researchSummary,
+            researchSignals: decision.researchSignals,
+          };
+          this.record.state.lastRoundResults[agent.id] = roundResult;
+          this.emit("agent_trades", {
+            agentId: agent.id,
+            trades: result.executedTrades,
+            portfolio: result.portfolio,
+            focusToken: decision.focusToken,
+            researchSummary: decision.researchSummary,
+          });
 
           this.refreshNansenStats();
           this.record.state.nextUpdateAt = new Date(Date.now() + this.config.roundDelayMs).toISOString();
@@ -196,10 +186,13 @@ export class ArenaOrchestrator {
         state: this.record.state,
       };
     } catch (error) {
+      const failedAgentId = this.record.state.activeAgentId;
       this.record.state.phase = "aborted";
       this.record.state.error = error instanceof Error ? error.message : "Arena crashed";
+      this.record.state.activeAgentId = null;
       this.record.state.nextUpdateAt = undefined;
       this.refreshNansenStats();
+      this.emit("agent_error", { agentId: failedAgentId, message: this.record.state.error });
       this.emit("log", { message: "Arena halted", error: this.record.state.error });
       return {
         arenaId: this.arenaId,
@@ -268,7 +261,7 @@ export class ArenaOrchestrator {
     const screener = this.normalizeRecords(sharedScreener);
     const priceMap = this.sim.buildPriceMap(netflows, screener);
     const solPriceUsd = priceMap.get("SOL") ?? 142;
-    const isLiveData = this.nansen.getSource() === "live";
+    const isLiveData = this.nansen.getSource() === "live" || (this.mcp?.connected ?? false);
     this.refreshNansenStats();
     return { netflows, screener, priceMap, solPriceUsd, isLiveData };
   }

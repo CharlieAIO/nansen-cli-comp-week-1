@@ -32,7 +32,7 @@ const defaultState: ArenaState = {
   thinkingHistory: { momentum: [], shadow: [], contrarian: [], quant: [] },
   lastRoundResults: {},
   commentaries: [],
-  nansen: { totalCalls: 0, totalCredits: 0, callLog: [], schemaLoaded: false, source: "mock" },
+  nansen: { totalCalls: 0, totalCredits: 0, callLog: [], schemaLoaded: false, source: "error" },
   sharedMarket: { solPriceUsd: 142, topInflowToken: "JUP", topRetailToken: "BONK" },
   log: [],
   aborted: false,

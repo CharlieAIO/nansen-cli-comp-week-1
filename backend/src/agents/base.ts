@@ -30,16 +30,16 @@ export abstract class BaseAgent implements TradingAgent {
       round,
     );
 
-    const [screener, netflow, pnlLeaderboard] = await Promise.allSettled([
+    const [screener, netflow, pnlLeaderboard] = await Promise.all([
       nansen.postTokenScreener(filters.screener),
       nansen.postSmartMoneyNetflow(filters.netflow),
       nansen.postPnlLeaderboard(filters.pnlLeaderboard),
     ]);
 
     return {
-      screener: screener.status === "fulfilled" ? screener.value : [],
-      netflow: netflow.status === "fulfilled" ? netflow.value : [],
-      pnlLeaderboard: pnlLeaderboard.status === "fulfilled" ? pnlLeaderboard.value : [],
+      screener,
+      netflow,
+      pnlLeaderboard,
     };
   }
 
@@ -70,4 +70,3 @@ export abstract class BaseAgent implements TradingAgent {
     return { label, value, tone };
   }
 }
-

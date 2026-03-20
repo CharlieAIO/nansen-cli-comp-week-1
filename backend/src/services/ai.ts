@@ -13,6 +13,12 @@ const MODEL = "gpt-5.4-nano";
 export class AIService {
   private readonly apiKey = process.env.OPENAI_API_KEY;
 
+  ensureConfigured() {
+    if (!this.apiKey) {
+      throw new Error("OPENAI_API_KEY is not configured");
+    }
+  }
+
   async getCommentary(roundData: RoundSummary): Promise<CommentaryOutput> {
     if (!this.apiKey) {
       return this.getMockCommentary(roundData);
@@ -36,13 +42,7 @@ export class AIService {
     portfolio: AgentPortfolio,
     round: number,
   ): Promise<NansenQuerySet> {
-    const mock: NansenQuerySet = {
-      screener: { timeframe: "24h", limit: 15, min_smart_money_wallet_count: 3 },
-      netflow: { limit: 20, filters: { include_smart_money_labels: ["Fund", "Smart Trader", "30D Smart Trader"] } },
-      pnlLeaderboard: { tokenAddress: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", limit: 15 },
-    };
-
-    if (!this.apiKey) return mock;
+    this.ensureConfigured();
 
     const system = `You are the filter-selection engine for trading agent "${agent.name}".
 Choose optimal query parameters for 3 Nansen API endpoints to gather data aligned with this strategy:
@@ -76,7 +76,11 @@ Return JSON matching exactly:
 Adapt the parameters to match your strategy. The tokenAddress must be a valid Solana address from your knowledge of top Solana tokens.`;
 
     const text = await this.call(system, user, 400);
-    return this.parseJsonSafe<NansenQuerySet>(text) ?? mock;
+    const parsed = this.parseJsonSafe<NansenQuerySet>(text);
+    if (!parsed) {
+      throw new Error(`Failed to parse filter response for ${agent.name}`);
+    }
+    return parsed;
   }
 
   async getAgentTradeDecision(
@@ -85,14 +89,7 @@ Adapt the parameters to match your strategy. The tokenAddress must be a valid So
     nansenData: AgentNansenData,
     round: number,
   ): Promise<TradeDecision> {
-    const holdDecision: TradeDecision = {
-      thinking: `[${agent.name}] No API key - holding position.`,
-      trades: [],
-      researchSummary: "Mock mode.",
-      researchSignals: [],
-    };
-
-    if (!this.apiKey) return holdDecision;
+    this.ensureConfigured();
 
     const system = `You are ${agent.name}, an AI crypto trading agent in a competition.
 Strategy: ${agent.strategyPrompt}
@@ -137,7 +134,11 @@ Return JSON:
 }`;
 
     const text = await this.call(system, user, 1000);
-    return this.parseJsonSafe<TradeDecision>(text) ?? holdDecision;
+    const parsed = this.parseJsonSafe<TradeDecision>(text);
+    if (!parsed) {
+      throw new Error(`Failed to parse trade decision for ${agent.name}`);
+    }
+    return parsed;
   }
 
   async runAgentWithMCP(
@@ -147,14 +148,7 @@ Return JSON:
     mcp: NansenMCPClient,
     onToolCall?: (name: string, args: unknown) => void,
   ): Promise<TradeDecision> {
-    const holdDecision: TradeDecision = {
-      thinking: `[${agent.name}] MCP research complete - holding.`,
-      trades: [],
-      researchSummary: "No clear signals.",
-      researchSignals: [],
-    };
-
-    if (!this.apiKey) return holdDecision;
+    this.ensureConfigured();
 
     const tools = mcp.tools.map((t) => ({
       type: "function" as const,
@@ -237,7 +231,11 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
       messages.push({ role: msg.role, content: msg.content, tool_calls: msg.tool_calls });
 
       if (choice.finish_reason === "stop" || !msg.tool_calls?.length) {
-        return this.parseJsonSafe<TradeDecision>(msg.content ?? "") ?? holdDecision;
+        const parsed = this.parseJsonSafe<TradeDecision>(msg.content ?? "");
+        if (!parsed) {
+          throw new Error(`Failed to parse MCP trade decision for ${agent.name}`);
+        }
+        return parsed;
       }
 
       for (const toolCall of msg.tool_calls ?? []) {
@@ -258,7 +256,7 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
       }
     }
 
-    return holdDecision;
+    throw new Error(`MCP decision loop exhausted for ${agent.name}`);
   }
 
   private async call(system: string, user: string, maxTokens: number): Promise<string> {

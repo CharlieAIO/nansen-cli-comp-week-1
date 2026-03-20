@@ -18,7 +18,7 @@ export interface NansenCall {
   latencyMs: number;
   timestamp: string;
   creditCost: number;
-  via: "rest" | "cli" | "mock";
+  via: "rest" | "cli" | "mcp";
 }
 
 export interface TradeInstruction {
@@ -137,7 +137,7 @@ export interface ArenaState {
     totalCredits: number;
     callLog: NansenCall[];
     schemaLoaded: boolean;
-    source: "live" | "mock";
+    source: "live" | "error";
   };
   sharedMarket: {
     solPriceUsd: number;
