@@ -196,7 +196,6 @@ export class NansenService {
         include_smart_money_labels: filters.filters?.include_smart_money_labels ?? ["Fund", "90D Smart Trader", "30D Smart Trader"],
         market_cap_usd: { min: 1000000 },
         trader_count: { min: 5 },
-        ...(filters.filters?.min_net_flow_usd ? { net_flow_usd: { min: filters.filters.min_net_flow_usd } } : {}),
       },
       pagination: { page: 1, per_page: filters.limit ?? 20 },
       order_by: [{ field: "net_flow_7d_usd", direction: "DESC" }],
