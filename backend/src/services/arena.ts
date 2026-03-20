@@ -85,6 +85,7 @@ export class ArenaOrchestrator {
         }
 
         this.record.state.round = round;
+        this.record.state.roundStartedAt = new Date().toISOString();
         this.emit("round_start", { round });
 
         const shared = await this.loadSharedMarket();
@@ -214,6 +215,7 @@ export class ArenaOrchestrator {
       round: 0,
       totalRounds: this.config.totalRounds,
       startedAt: new Date().toISOString(),
+      roundStartedAt: new Date().toISOString(),
       activeAgentId: null,
       rankings: this.agents.map((agent, index) => ({
         id: agent.id,

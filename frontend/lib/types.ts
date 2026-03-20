@@ -122,6 +122,7 @@ export interface ArenaState {
   round: number;
   totalRounds: number | null;
   startedAt: string;
+  roundStartedAt: string;
   completedAt?: string;
   nextUpdateAt?: string;
   activeAgentId: AgentId | null;

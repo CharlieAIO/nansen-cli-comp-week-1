@@ -18,7 +18,7 @@ export function ArenaView() {
   const [now, setNow] = useState<number | null>(null);
   const winner = state.phase === "complete" ? state.rankings[0] : null;
   const currentTime = now ?? new Date(state.startedAt).getTime();
-  const runtimeSeconds = Math.max(0, Math.floor((currentTime - new Date(state.startedAt).getTime()) / 1000));
+  const roundElapsedSeconds = Math.max(0, Math.floor((currentTime - new Date(state.roundStartedAt).getTime()) / 1000));
   const secondsToNextUpdate = state.nextUpdateAt
     ? Math.max(0, Math.ceil((new Date(state.nextUpdateAt).getTime() - currentTime) / 1000))
     : null;
@@ -56,14 +56,14 @@ export function ArenaView() {
 
       <section className="overview grid overviewGrid">
         <div className="panel statCard">
-          <span className="label">Current Phase</span>
-          <strong>{state.mode === "continuous" ? `R${state.round}` : `${state.round}/${state.totalRounds ?? 0}`}</strong>
+          <span className="label">Active Round</span>
+          <strong>{state.round}</strong>
           <small>{state.activeAgentId ? `${state.activeAgentId} calculating` : "Cycle transition"}</small>
         </div>
         <div className="panel statCard">
-          <span className="label">Session Uptime</span>
-          <strong>{Math.floor(runtimeSeconds / 60).toString().padStart(2, "0")}m {String(runtimeSeconds % 60).padStart(2, "0")}s</strong>
-          <small>{secondsToNextUpdate === null ? "Steady state" : `Next tick: ${secondsToNextUpdate}s`}</small>
+          <span className="label">Round Elapsed</span>
+          <strong>{Math.floor(roundElapsedSeconds / 60).toString().padStart(2, "0")}m {String(roundElapsedSeconds % 60).padStart(2, "0")}s</strong>
+          <small>{secondsToNextUpdate === null ? "Round duration varies" : `Approx. next step in ${secondsToNextUpdate}s`}</small>
         </div>
         <div className="panel statCard">
           <span className="label">Top Market Inflow</span>
@@ -114,4 +114,3 @@ export function ArenaView() {
     </main>
   );
 }
-

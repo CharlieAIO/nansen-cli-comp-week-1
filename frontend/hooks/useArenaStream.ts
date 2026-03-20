@@ -13,6 +13,7 @@ const defaultState: ArenaState = {
   round: 0,
   totalRounds: null,
   startedAt: new Date(0).toISOString(),
+  roundStartedAt: new Date(0).toISOString(),
   nextUpdateAt: undefined,
   activeAgentId: null,
   rankings: [],
