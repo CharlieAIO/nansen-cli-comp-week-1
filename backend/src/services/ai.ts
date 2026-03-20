@@ -217,7 +217,7 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
         },
         body: JSON.stringify({
           model: MODEL,
-          max_tokens: 2000,
+          max_completion_tokens: 2000,
           messages,
           tools: tools.length > 0 ? tools : undefined,
           response_format: { type: "json_object" },
@@ -271,7 +271,7 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: maxTokens,
+        max_completion_tokens: maxTokens,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: system },
@@ -337,7 +337,7 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
         },
         body: JSON.stringify({
           model: MODEL,
-          max_tokens: 600,
+          max_completion_tokens: 600,
           response_format: { type: "json_object" },
           messages: [
             {
