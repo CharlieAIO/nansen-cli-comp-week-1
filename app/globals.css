@@ -571,6 +571,52 @@ select {
   overflow-y: auto;
 }
 
+.eligibilityRows {
+  display: grid;
+  gap: 10px;
+}
+
+.eligibilityRow {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.eligibilityRow strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.eligibilityRow small,
+.eligibilityNote {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.eligibilityDot {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.eligibilityDot.done {
+  background: var(--shadow);
+}
+
+.eligibilityDot.pending {
+  background: var(--danger);
+}
+
+.eligibilityNote {
+  margin: 14px 0 0;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
@@ -634,4 +680,3 @@ body::after {
   z-index: 101;
   animation: scanline 8s linear infinite;
 }
-

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { AgentCard } from "@/components/AgentCard";
 import { CommentaryPanel } from "@/components/CommentaryPanel";
 import { EquityCurve } from "@/components/EquityCurve";
+import { EligibilityPanel } from "@/components/EligibilityPanel";
 import { Leaderboard } from "@/components/Leaderboard";
 import { LiveFeed } from "@/components/LiveFeed";
 import { WinnerBanner } from "@/components/WinnerBanner";
@@ -103,6 +104,7 @@ export function ArenaView() {
         </div>
 
         <div className="grid sideGrid">
+          <EligibilityPanel callLog={state.nansen.callLog} />
           <Leaderboard rankings={state.rankings} />
           <CommentaryPanel commentary={state.commentaries.at(-1)} />
           <EquityCurve state={state} />

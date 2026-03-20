@@ -63,7 +63,7 @@ export class NansenService {
   async cliSmartMoneyNetflow(chain: string, limit: number) {
     nextTick();
     return this.execCli(
-      ["smart-money", "netflow", "--chain", chain, "--limit", String(limit)],
+      ["research", "smart-money", "netflow", "--chain", chain, "--limit", String(limit)],
       "smart-money/netflow",
       { data: getMockNetflows().slice(0, limit) },
     );
@@ -71,7 +71,7 @@ export class NansenService {
 
   async cliTokenScreener(chain: string, timeframe: string) {
     return this.execCli(
-      ["token", "screener", "--chain", chain, "--timeframe", timeframe],
+      ["research", "token", "screener", "--chain", chain, "--timeframe", timeframe],
       "token-screener",
       { data: getMockScreener() },
     );
@@ -79,7 +79,7 @@ export class NansenService {
 
   async cliProfilerBalance(address: string, chain: string) {
     return this.execCli(
-      ["profiler", "balance", "--address", address, "--chain", chain],
+      ["research", "profiler", "balance", "--address", address, "--chain", chain],
       "profiler/balance",
       { data: getMockBalances(address) },
     );
@@ -186,6 +186,7 @@ export class NansenService {
       return parsed;
     } catch {
       const elapsed = Date.now() - start;
+      this.source = "mock";
       this.logCall(endpoint, args, 200, elapsed, this.estimateCredits(endpoint), "mock");
       return fallback;
     }
