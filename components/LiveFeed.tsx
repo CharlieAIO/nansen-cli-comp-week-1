@@ -7,17 +7,17 @@ export function LiveFeed({ events }: { events: ArenaEvent[] }) {
         <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
       </div>
       <div className="sectionHead">
-        <h3>SYSTEM_LOG</h3>
-        <span className="pill">BUFFER_READY</span>
+        <h3>Live feed</h3>
+        <span className="pill">Polling</span>
       </div>
       <div className="feedRows">
         {events.length ? events.map((event, index) => (
           <div key={`${event.timestamp}-${index}`} className="feedRow">
             <span className="feedTimestamp">[{new Date(event.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span>
-            <span className="feedEventName">{event.type.toUpperCase().replaceAll(" ", "_")}</span>
+            <span className="feedEventName">{event.type.replaceAll("_", " ")}</span>
             <div className="feedDot"></div>
           </div>
-        )) : <div className="feedRow muted">AWAITING_INPUT...</div>}
+        )) : <div className="feedRow muted">Waiting for events...</div>}
       </div>
     </section>
   );

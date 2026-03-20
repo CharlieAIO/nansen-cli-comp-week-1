@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { AgentCard } from "@/components/AgentCard";
 import { CommentaryPanel } from "@/components/CommentaryPanel";
 import { EquityCurve } from "@/components/EquityCurve";
-import { EligibilityPanel } from "@/components/EligibilityPanel";
 import { Leaderboard } from "@/components/Leaderboard";
 import { LiveFeed } from "@/components/LiveFeed";
 import { WinnerBanner } from "@/components/WinnerBanner";
@@ -34,24 +33,23 @@ export function ArenaView() {
 
   return (
     <main className="shell">
-      <div className="scanline" />
       <section className="hero panel">
         <div className="agentCardDecoration">
           <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
         </div>
         <div>
-          <span className="pill">QUANTUM_ARENA_v1.0</span>
-          <h1>ALWAYS_ON. LIVE_PROGRESS. NO_RESET.</h1>
+          <span className="pill">AI Agent Trading Arena</span>
+          <h1>Shared live arena</h1>
           <p>
-            The arena stays live on the server, keeps cycling through rounds, and shows current progress,
-            runtime, and the next scheduled update as soon as you open the site.
+            A backend-managed process keeps four agents trading continuously, and this page polls the
+            latest state so anyone opening the site sees the same run in progress.
           </p>
         </div>
         <div className="heroActions">
           <div className="heroMeta">
-            <span className="pill">INSTANCE: {arenaId ? arenaId.slice(0, 8) : "IDLE"}</span>
-            <span className="pill">DATA_STREAM: {state.nansen.source.toUpperCase()}</span>
-            <span className="pill">ARENA_MODE: SHARED_CONTINUOUS</span>
+            <span className="pill">Arena {arenaId ? arenaId.slice(0, 8) : "booting"}</span>
+            <span className="pill">Data {state.nansen.source}</span>
+            <span className="pill">Polling shared status</span>
           </div>
         </div>
       </section>
@@ -59,27 +57,27 @@ export function ArenaView() {
       <section className="overview grid overviewGrid">
         <div className="panel statCard">
           <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
-          <span className="label">CURRENT_PHASE</span>
-          <strong>{state.mode === "continuous" ? `ROUND_${state.round.toString().padStart(3, "0")}` : `${state.round.toString().padStart(2, "0")} / ${(state.totalRounds ?? 0).toString().padStart(2, "0")}`}</strong>
-          <small>{state.activeAgentId ? `NODE_${state.activeAgentId.toUpperCase()}_PROCESSING` : "AWAITING_ROUND_OPEN"}</small>
+          <span className="label">Round</span>
+          <strong>{state.mode === "continuous" ? `#${state.round}` : `${state.round}/${state.totalRounds ?? 0}`}</strong>
+          <small>{state.activeAgentId ? `${state.activeAgentId} is processing` : "Waiting for next cycle"}</small>
         </div>
         <div className="panel statCard">
           <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
-          <span className="label">RUNTIME_AND_ETA</span>
-          <strong>{Math.floor(runtimeSeconds / 60).toString().padStart(2, "0")}M {String(runtimeSeconds % 60).padStart(2, "0")}S</strong>
-          <small>{secondsToNextUpdate === null ? "NO_TIMER_ACTIVE" : `NEXT_UPDATE_IN_${secondsToNextUpdate}S`}</small>
+          <span className="label">Uptime</span>
+          <strong>{Math.floor(runtimeSeconds / 60).toString().padStart(2, "0")}m {String(runtimeSeconds % 60).padStart(2, "0")}s</strong>
+          <small>{secondsToNextUpdate === null ? "No timer active" : `Next update in about ${secondsToNextUpdate}s`}</small>
         </div>
         <div className="panel statCard">
           <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
-          <span className="label">ALPHA_SIGNAL_TOP</span>
-          <strong>{state.sharedMarket.topInflowToken || "SCANNING..."}</strong>
-          <small>FOMO_RETAIL: {state.sharedMarket.topRetailToken}</small>
+          <span className="label">Lead signal</span>
+          <strong>{state.sharedMarket.topInflowToken || "Scanning"}</strong>
+          <small>Retail heat: {state.sharedMarket.topRetailToken}</small>
         </div>
         <div className="panel statCard">
           <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
-          <span className="label">NANSEN_RATE_WINDOW</span>
-          <strong>{state.nansen.totalCalls.toString().padStart(3, "0")} CALLS</strong>
-          <small>{state.nansen.totalCredits} BUDGET_USED · {state.nansen.source.toUpperCase()}</small>
+          <span className="label">Nansen activity</span>
+          <strong>{state.nansen.totalCalls} calls</strong>
+          <small>{state.nansen.totalCredits} credits used · {state.nansen.source}</small>
         </div>
       </section>
 
@@ -104,7 +102,6 @@ export function ArenaView() {
         </div>
 
         <div className="grid sideGrid">
-          <EligibilityPanel callLog={state.nansen.callLog} />
           <Leaderboard rankings={state.rankings} />
           <CommentaryPanel commentary={state.commentaries.at(-1)} />
           <EquityCurve state={state} />

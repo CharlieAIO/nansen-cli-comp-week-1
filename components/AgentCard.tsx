@@ -18,7 +18,7 @@ export function AgentCard({
         <div className="corner-tl" style={{ background: agent.color }}></div>
         <div className="corner-br" style={{ background: agent.color }}></div>
       </div>
-      
+
       <header>
         <div className="agentHeaderInfo">
           <div className="avatarWrap" style={{ borderColor: agent.color }}>
@@ -38,35 +38,35 @@ export function AgentCard({
         <div className={`returnBadge ${agent.returnPct >= 0 ? "up" : "down"}`}>{agent.returnPct.toFixed(2)}%</div>
       </header>
 
-      <div className="cardMetrics">
+        <div className="cardMetrics">
         <div>
-          <span className="label">PORTFOLIO_VALUE</span>
+          <span className="label">Portfolio</span>
           <strong>{portfolio.totalValueSol.toFixed(2)} SOL</strong>
         </div>
         <div>
-          <span className="label">CASH_LIQUID</span>
+          <span className="label">Cash</span>
           <strong>{portfolio.cashSol.toFixed(2)} SOL</strong>
         </div>
       </div>
 
       <div className="decisionArea">
-        <span className="label">LAST_LOGICAL_NODE</span>
-        <p className="thinking">{result?.thinking ?? "AWAITING ROUND DATA..."}</p>
+        <span className="label">Last thesis</span>
+        <p className="thinking">{result?.thinking ?? "Waiting for the first round."}</p>
       </div>
 
       <div className="positionsArea">
-        <span className="label">ACTIVE_POSITIONS</span>
+        <span className="label">Positions</span>
         <div className="tokenList">
           {portfolio.positions.length ? portfolio.positions.map((position) => (
             <span key={position.tokenAddress} className="tokenChip">
               {position.tokenSymbol} {position.currentValueUsd.toFixed(0)} USD
             </span>
-          )) : <span className="tokenChip muted">FLAT_POSITION</span>}
+          )) : <span className="tokenChip muted">No open positions</span>}
         </div>
       </div>
 
       <div className="tradesArea">
-        <span className="label">ROUND_EXECUTION_LOG</span>
+        <span className="label">Latest trades</span>
         <div className="tradeList">
           {result?.trades.length ? result.trades.map((trade, index) => (
             <div key={`${trade.token_address}-${index}`} className="tradeRow">
@@ -74,7 +74,7 @@ export function AgentCard({
               <span>{trade.token_symbol}</span>
               <span>{trade.amount_sol.toFixed(2)} SOL</span>
             </div>
-          )) : <div className="tradeRow muted"><span>RETAIN_POSITION</span></div>}
+          )) : <div className="tradeRow muted"><span>No trades this round</span></div>}
         </div>
       </div>
     </article>

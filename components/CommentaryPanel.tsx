@@ -7,18 +7,18 @@ export function CommentaryPanel({ commentary }: { commentary?: CommentaryOutput 
         <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
       </div>
       <div className="sectionHead">
-        <h3>JUDGE_REPORT</h3>
-        <span className="pill accent">MISSION_CONTROL</span>
+        <h3>Commentary</h3>
+        <span className="pill accent">Latest</span>
       </div>
-      <p className="commentaryText">{commentary?.round_commentary ?? "AWAITING ROUND_END_SUMMARY..."}</p>
+      <p className="commentaryText">{commentary?.round_commentary ?? "Waiting for commentary from the first completed round."}</p>
       <div className="commentaryMeta">
         <div>
-          <span className="label">TACTICAL_MVP</span>
-          <strong>{commentary?.mvp_this_round ?? "N/A"}</strong>
+          <span className="label">MVP</span>
+          <strong>{commentary?.mvp_this_round ?? "-"}</strong>
         </div>
         <div>
-          <span className="label">STRATEGIC_PREDICTION</span>
-          <strong>{commentary?.prediction ?? "CALCULATING..."}</strong>
+          <span className="label">Prediction</span>
+          <strong>{commentary?.prediction ?? "-"}</strong>
         </div>
       </div>
     </section>

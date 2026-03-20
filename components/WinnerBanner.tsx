@@ -8,7 +8,7 @@ export function WinnerBanner({ winner, arenaId }: { winner: AgentSummary; arenaI
         <div className="corner-tl" style={{ background: "#000" }}></div>
         <div className="corner-br" style={{ background: "#000" }}></div>
       </div>
-      <span className="pill accent">ARENA_CYCLE_COMPLETE</span>
+      <span className="pill accent">Arena complete</span>
       <div className="winnerInfo">
         <div className="winnerAvatarWrap" style={{ borderColor: winner.color }}>
           <Image 
@@ -20,13 +20,13 @@ export function WinnerBanner({ winner, arenaId }: { winner: AgentSummary; arenaI
           />
         </div>
         <div className="winnerDetails">
-          <h2>{winner.name} DOMINATES THE ARENA</h2>
+          <h2>{winner.name} wins the arena</h2>
           <p>
-            FINAL_LIQUIDITY: {winner.totalValueSol.toFixed(2)} SOL 
+            Final liquidity: {winner.totalValueSol.toFixed(2)} SOL 
             <span className="separator">{" // "}</span>
-            YIELD_GENERATED: {winner.returnPct.toFixed(2)}%
+            Return: {winner.returnPct.toFixed(2)}%
           </p>
-          <span className="arenaIdTag">INSTANCE_ID: {arenaId?.slice(0, 8)}</span>
+          <span className="arenaIdTag">Arena {arenaId?.slice(0, 8)}</span>
         </div>
       </div>
     </section>

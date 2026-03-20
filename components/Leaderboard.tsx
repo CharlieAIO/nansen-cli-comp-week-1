@@ -8,13 +8,13 @@ export function Leaderboard({ rankings }: { rankings: AgentSummary[] }) {
         <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
       </div>
       <div className="sectionHead">
-        <h3>ARENA_RANKINGS</h3>
-        <span className="pill">LIVE_STREAM</span>
+        <h3>Leaderboard</h3>
+        <span className="pill">Live</span>
       </div>
       <div className="leaderRows">
         {rankings.map((agent) => (
           <div key={agent.id} className="leaderRow">
-            <span className="rankIndex">RANK_{agent.rank.toString().padStart(2, '0')}</span>
+            <span className="rankIndex">#{agent.rank}</span>
             <div className="miniAvatarWrap" style={{ borderColor: agent.color }}>
               <Image 
                 src={`/avatars/${agent.id}.png`} 

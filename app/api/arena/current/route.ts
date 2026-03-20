@@ -1,7 +1,7 @@
-import { getActiveArenaInstance } from "@/lib/arena-store";
+import { ensureArenaRunning } from "@/lib/arena-service";
 
 export async function GET() {
-  const active = getActiveArenaInstance();
+  const active = await ensureArenaRunning();
   if (!active) {
     return Response.json({ arenaId: null, state: null });
   }

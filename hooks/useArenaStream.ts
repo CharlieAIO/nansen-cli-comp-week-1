@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import type { ArenaConfig, ArenaState } from "@/lib/types";
+import type { ArenaState } from "@/lib/types";
+
+const POLL_INTERVAL_MS = 4000;
 
 const defaultState: ArenaState = {
   id: "",
@@ -40,55 +42,32 @@ export function useArenaStream() {
   const [arenaId, setArenaId] = useState<string | null>(null);
   const [state, setState] = useState<ArenaState>(defaultState);
 
-  const ensureArenaStarted = useCallback(async (config: Partial<ArenaConfig>) => {
-    const res = await fetch("/api/arena/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(config),
-    });
-    const data = (await res.json()) as { arenaId: string };
-    setArenaId(data.arenaId);
-  }, []);
-
   useEffect(() => {
-    let cancelled = false;
+    let active = true;
 
-    async function ensureArena() {
-      await ensureArenaStarted({ mode: "continuous", totalRounds: null, roundDelayMs: 12000 });
-
-      if (cancelled) return;
-
+    async function pollArena() {
       const currentRes = await fetch("/api/arena/current", { cache: "no-store" });
       const current = (await currentRes.json()) as { arenaId: string | null; state: ArenaState | null };
+      if (!active) {
+        return;
+      }
+
       if (current.arenaId && current.state) {
         setArenaId(current.arenaId);
         setState(current.state);
       }
     }
 
-    void ensureArena();
+    void pollArena();
+    const interval = window.setInterval(() => {
+      void pollArena();
+    }, POLL_INTERVAL_MS);
 
     return () => {
-      cancelled = true;
+      active = false;
+      window.clearInterval(interval);
     };
-  }, [ensureArenaStarted]);
-
-  useEffect(() => {
-    if (!arenaId) return;
-    const source = new EventSource(`/api/arena/stream/${arenaId}`);
-    source.onmessage = (event) => {
-      const parsed = JSON.parse(event.data) as { state?: ArenaState; data?: ArenaState };
-      if (parsed.state) {
-        setState(parsed.state);
-      } else if (parsed.data && "phase" in parsed.data) {
-        setState(parsed.data);
-      }
-    };
-    source.onerror = () => {
-      source.close();
-    };
-    return () => source.close();
-  }, [arenaId]);
+  }, []);
 
   return useMemo(() => ({ arenaId, state }), [arenaId, state]);
 }

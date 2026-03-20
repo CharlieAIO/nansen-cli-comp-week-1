@@ -26,8 +26,8 @@ export function EquityCurve({ state }: { state: ArenaState }) {
         <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
       </div>
       <div className="sectionHead">
-        <h3>EQUITY_ANALYTICS</h3>
-        <span className="pill">ROUND_{state.round.toString().padStart(2, '0')}</span>
+        <h3>Equity curves</h3>
+        <span className="pill">Round {state.round}</span>
       </div>
       <div className="chartWrap">
         <ResponsiveContainer width="100%" height={240}>
