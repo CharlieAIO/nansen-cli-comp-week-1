@@ -121,6 +121,8 @@ Rules:
 - Only trade tokens that appear in the Nansen data provided (use exact addresses from the data)
 - Maximum allocation per position: ${(agent.maxAllocPct * 100).toFixed(0)}% of total portfolio
 - Return ONLY one valid JSON object. No markdown. No prose before or after JSON.
+- You must evaluate every current position for whether it should still be held or sold this round.
+- If a current position has weakened based on the Nansen data, include a SELL trade for it.
 - Be decisive but risk-aware. Hold cash if no conviction.`;
 
     const promptData = this.buildTradePromptData(nansenData);
@@ -152,6 +154,7 @@ Return EXACTLY this JSON structure with the same keys:
 }
 
 If you want to hold, set "trades": [] and still fill the other fields.
+If you already hold a token and the data is still strong, you may keep it by omitting a trade for that token.
 Do not use null. Do not omit keys. Do not wrap the JSON in markdown.`;
 
     const text = await this.call(system, user, 1000);

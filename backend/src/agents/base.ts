@@ -25,6 +25,13 @@ export abstract class BaseAgent implements TradingAgent {
       round,
     );
 
+    if (portfolio.positions.length > 0) {
+      filters.pnlLeaderboard = {
+        ...filters.pnlLeaderboard,
+        tokenAddress: portfolio.positions[0].tokenAddress,
+      };
+    }
+
     const [screener, netflow, pnlLeaderboard] = await Promise.all([
       nansen.postTokenScreener(filters.screener),
       nansen.postSmartMoneyNetflow(filters.netflow),
