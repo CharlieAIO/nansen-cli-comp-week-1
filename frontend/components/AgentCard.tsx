@@ -39,23 +39,15 @@ export function AgentCard({
             {result?.focusToken ? <p className="focusToken">{result.focusToken}</p> : null}
           </div>
         </div>
-        <div className={`returnBadge ${agent.returnPct >= 0 ? "up" : "down"}`}>{agent.returnPct.toFixed(2)}%</div>
-      </header>
 
-      <div className="cardMetrics">
-        <div>
-          <span className="label">Portfolio</span>
-          <strong>{portfolio.totalValueSol.toFixed(3)} SOL</strong>
+        <div className="agentValue">
+          <span className="portfolioSOL">{portfolio.totalValueSol.toFixed(3)} SOL</span>
+          <div className={`returnBadge ${agent.returnPct >= 0 ? "up" : "down"}`}>
+            {agent.returnPct >= 0 ? "+" : ""}{agent.returnPct.toFixed(2)}%
+          </div>
+          <span className="cashLine">{portfolio.cashSol.toFixed(2)} cash · {portfolio.positions.length} pos</span>
         </div>
-        <div>
-          <span className="label">Cash</span>
-          <strong>{portfolio.cashSol.toFixed(3)} SOL</strong>
-        </div>
-        <div>
-          <span className="label">Positions</span>
-          <strong>{portfolio.positions.length}</strong>
-        </div>
-      </div>
+      </header>
 
       <div className="decisionArea">
         <span className="label">Thinking</span>
