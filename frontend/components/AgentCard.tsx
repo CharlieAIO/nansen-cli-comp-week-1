@@ -69,8 +69,64 @@ export function AgentCard({
             <div className="signalGrid">
               {signals.map((signal) => (
                 <div key={`${agent.id}-${signal.label}`} className="signalCard">
-                  <span>{signal.label}</span>
-                  <strong>{signal.value}</strong>
+                  <span className="label" style={{ marginBottom: '8px', opacity: 0.6, fontSize: '9px' }}>{signal.label}</span>
+                  <div className="signalValue" style={{ width: '100%', overflowWrap: 'anywhere' }}>
+                    {signal.value.includes(';') ? (
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {signal.value.split(';').map((item, idx) => {
+                          const trimmed = item.trim();
+                          if (!trimmed) return null;
+                          
+                          // Try to split into key: value for better alignment
+                          const colonIndex = trimmed.indexOf(':');
+                          if (colonIndex !== -1) {
+                            const key = trimmed.substring(0, colonIndex).trim();
+                            const val = trimmed.substring(colonIndex + 1).trim();
+                            return (
+                              <li key={idx} style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between',
+                                fontSize: '11px', 
+                                fontFamily: 'var(--font-mono)',
+                                borderLeft: '2px solid var(--border-bright)',
+                                padding: '2px 0 2px 8px',
+                                gap: '8px'
+                              }}>
+                                <span style={{ opacity: 0.7, whiteSpace: 'nowrap' }}>{key}</span>
+                                <strong style={{ 
+                                  color: val.toLowerCase().includes('positive') ? 'var(--shadow)' : 
+                                         val.toLowerCase().includes('negative') ? 'var(--danger)' : 'var(--text)',
+                                  textAlign: 'right'
+                                }}>{val}</strong>
+                              </li>
+                            );
+                          }
+                          
+                          return (
+                            <li key={idx} style={{ 
+                              fontSize: '11px', 
+                              fontFamily: 'var(--font-mono)',
+                              borderLeft: '2px solid var(--border-bright)',
+                              padding: '2px 0 2px 8px',
+                            }}>
+                              {trimmed}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <strong style={{ 
+                        fontSize: '16px', 
+                        fontFamily: 'var(--font-mono)',
+                        color: signal.tone === 'positive' ? 'var(--shadow)' : 
+                               signal.tone === 'negative' ? 'var(--danger)' : 'var(--text)',
+                        display: 'block',
+                        wordBreak: 'break-all'
+                      }}>
+                        {signal.value}
+                      </strong>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
