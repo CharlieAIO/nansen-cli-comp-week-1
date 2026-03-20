@@ -113,7 +113,7 @@ export function ArenaView() {
         </div>
 
         <div className="grid sideGrid">
-          <Leaderboard rankings={state.rankings} />
+          <Leaderboard rankings={state.rankings} portfolios={state.portfolios} />
           <NansenActivityPanel calls={state.nansen.callLog} />
           <CommentaryPanel commentary={state.commentaries.at(-1)} />
           <EquityCurve state={state} />
