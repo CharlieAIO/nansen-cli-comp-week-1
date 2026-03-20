@@ -5,19 +5,26 @@ import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "rec
 import type { ArenaState } from "@/lib/types";
 
 export function EquityCurve({ state }: { state: ArenaState }) {
-  const chartData = Array.from({ length: Math.max(state.round, 1) }, (_, index) => ({
-    round: index + 1,
-    momentum: 10 + ((state.portfolios.momentum.totalValueSol - 10) / Math.max(state.round, 1)) * (index + 1),
-    shadow: 10 + ((state.portfolios.shadow.totalValueSol - 10) / Math.max(state.round, 1)) * (index + 1),
-    contrarian: 10 + ((state.portfolios.contrarian.totalValueSol - 10) / Math.max(state.round, 1)) * (index + 1),
-    quant: 10 + ((state.portfolios.quant.totalValueSol - 10) / Math.max(state.round, 1)) * (index + 1),
-  }));
+  const roundSet = new Set<number>();
+  Object.values(state.equityHistory).forEach((series) => {
+    series.forEach((point) => roundSet.add(point.round));
+  });
+
+  const chartData = [...roundSet]
+    .sort((a, b) => a - b)
+    .map((round) => ({
+      round,
+      momentum: state.equityHistory.momentum.find((point) => point.round === round)?.valueSol ?? 10,
+      shadow: state.equityHistory.shadow.find((point) => point.round === round)?.valueSol ?? 10,
+      contrarian: state.equityHistory.contrarian.find((point) => point.round === round)?.valueSol ?? 10,
+      quant: state.equityHistory.quant.find((point) => point.round === round)?.valueSol ?? 10,
+    }));
 
   return (
     <section className="panel sidePanel chartPanel">
       <div className="sectionHead">
         <h3>Equity Curves</h3>
-        <span className="pill">{state.totalRounds} rounds</span>
+        <span className="pill">Round {state.round}</span>
       </div>
       <div className="chartWrap">
         <ResponsiveContainer width="100%" height={220}>

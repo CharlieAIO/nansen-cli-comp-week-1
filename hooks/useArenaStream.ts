@@ -18,6 +18,12 @@ const defaultState: ArenaState = {
     contrarian: { cashSol: 10, positions: [], totalValueSol: 10, totalValueUsd: 1420, returnPct: 0, currentRound: 1 },
     quant: { cashSol: 10, positions: [], totalValueSol: 10, totalValueUsd: 1420, returnPct: 0, currentRound: 1 },
   },
+  equityHistory: {
+    momentum: [{ round: 0, valueSol: 10 }],
+    shadow: [{ round: 0, valueSol: 10 }],
+    contrarian: [{ round: 0, valueSol: 10 }],
+    quant: [{ round: 0, valueSol: 10 }],
+  },
   tradeHistory: { momentum: [], shadow: [], contrarian: [], quant: [] },
   thinkingHistory: { momentum: [], shadow: [], contrarian: [], quant: [] },
   lastRoundResults: {},

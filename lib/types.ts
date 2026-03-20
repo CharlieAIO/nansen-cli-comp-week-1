@@ -112,6 +112,7 @@ export interface ArenaState {
   activeAgentId: AgentId | null;
   rankings: AgentSummary[];
   portfolios: Record<AgentId, AgentPortfolio>;
+  equityHistory: Record<AgentId, Array<{ round: number; valueSol: number }>>;
   tradeHistory: Record<AgentId, ExecutedTrade[]>;
   thinkingHistory: Record<AgentId, string[]>;
   lastRoundResults: Partial<Record<AgentId, AgentRoundResult>>;

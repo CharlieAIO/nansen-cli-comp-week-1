@@ -119,6 +119,7 @@ export class ArenaOrchestrator {
       }
 
       this.record.state.activeAgentId = null;
+      this.captureEquityHistory(round);
       const commentary = await this.safeCommentary(round);
       if (commentary) {
         this.record.state.commentaries.push(commentary);
@@ -168,6 +169,12 @@ export class ArenaOrchestrator {
         rank: index + 1,
       })),
       portfolios,
+      equityHistory: {
+        momentum: [{ round: 0, valueSol: 10 }],
+        shadow: [{ round: 0, valueSol: 10 }],
+        contrarian: [{ round: 0, valueSol: 10 }],
+        quant: [{ round: 0, valueSol: 10 }],
+      },
       tradeHistory,
       thinkingHistory,
       lastRoundResults: {},
@@ -255,6 +262,15 @@ export class ArenaOrchestrator {
       schemaLoaded: this.record.state.nansen.schemaLoaded,
       source: this.nansen.getSource(),
     };
+  }
+
+  private captureEquityHistory(round: number) {
+    for (const agent of this.agents) {
+      this.record.state.equityHistory[agent.id].push({
+        round,
+        valueSol: this.record.state.portfolios[agent.id].totalValueSol,
+      });
+    }
   }
 
   private emit(type: ArenaEvent["type"], data: unknown) {
