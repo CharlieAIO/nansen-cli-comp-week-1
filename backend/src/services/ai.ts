@@ -43,6 +43,7 @@ export class AIService {
     round: number,
   ): Promise<NansenQuerySet> {
     this.ensureConfigured();
+    const defaults = this.getDefaultFilters(agent.id);
 
     const system = `You are the filter-selection engine for trading agent "${agent.name}".
 Choose optimal query parameters for 3 Nansen API endpoints to gather data aligned with this strategy:
@@ -73,14 +74,25 @@ Return JSON matching exactly:
   }
 }
 
-Adapt the parameters to match your strategy. The tokenAddress must be a valid Solana address from your knowledge of top Solana tokens.`;
+    Adapt the parameters to match your strategy. The tokenAddress must be a valid Solana address from your knowledge of top Solana tokens.`;
 
     const text = await this.call(system, user, 400);
     const parsed = this.parseJsonSafe<NansenQuerySet>(text);
     if (!parsed) {
-      throw new Error(`Failed to parse filter response for ${agent.name}`);
+      return defaults;
     }
-    return parsed;
+    return {
+      screener: { ...defaults.screener, ...parsed.screener },
+      netflow: {
+        ...defaults.netflow,
+        ...parsed.netflow,
+        filters: {
+          ...defaults.netflow.filters,
+          ...parsed.netflow?.filters,
+        },
+      },
+      pnlLeaderboard: { ...defaults.pnlLeaderboard, ...parsed.pnlLeaderboard },
+    };
   }
 
   async getAgentTradeDecision(
@@ -270,6 +282,7 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
         body: JSON.stringify({
           model: MODEL,
           max_tokens: maxTokens,
+          response_format: { type: "json_object" },
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },
@@ -306,5 +319,48 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
       most_interesting_trade: roundData.agents.find((agent) => agent.this_round_trades.length)?.this_round_trades[0]?.reasoning ?? "No standout trade this round.",
       prediction: `${leader.name} has momentum, but one bad rotation into ${roundData.market_context.biggest_retail_fomo_token} could flip the standings fast.`,
     };
+  }
+
+  private getDefaultFilters(agentId: string): NansenQuerySet {
+    const screenerBase = {
+      timeframe: "24h" as const,
+      limit: 12,
+      min_smart_money_wallet_count: 3,
+      min_volume_usd: 250000,
+      sort_by: "volume",
+    };
+
+    switch (agentId) {
+      case "momentum":
+        return {
+          screener: { ...screenerBase, min_smart_money_wallet_count: 5, min_volume_usd: 500000 },
+          netflow: { limit: 10, filters: { include_smart_money_labels: ["Fund", "Smart Trader", "30D Smart Trader"], min_net_flow_usd: 250000 } },
+          pnlLeaderboard: { tokenAddress: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", limit: 10 },
+        };
+      case "shadow":
+        return {
+          screener: { ...screenerBase, min_smart_money_wallet_count: 4, min_volume_usd: 350000 },
+          netflow: { limit: 8, filters: { include_smart_money_labels: ["Fund", "Smart Trader"] } },
+          pnlLeaderboard: { tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6ix2JzwXo1tBLum", limit: 15 },
+        };
+      case "contrarian":
+        return {
+          screener: { ...screenerBase, min_smart_money_wallet_count: 2, min_volume_usd: 200000 },
+          netflow: { limit: 10, filters: { include_smart_money_labels: ["Fund", "30D Smart Trader"] } },
+          pnlLeaderboard: { tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6ix2JzwXo1tBLum", limit: 12 },
+        };
+      case "quant":
+        return {
+          screener: { ...screenerBase, min_smart_money_wallet_count: 3, min_volume_usd: 300000 },
+          netflow: { limit: 8, filters: { include_smart_money_labels: ["Fund", "Smart Trader"] } },
+          pnlLeaderboard: { tokenAddress: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", limit: 10 },
+        };
+      default:
+        return {
+          screener: screenerBase,
+          netflow: { limit: 10, filters: { include_smart_money_labels: ["Fund", "Smart Trader"] } },
+          pnlLeaderboard: { tokenAddress: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", limit: 10 },
+        };
+    }
   }
 }
