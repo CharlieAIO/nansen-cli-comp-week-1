@@ -8,7 +8,13 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class NansenApiError extends Error {
   constructor(endpoint: string, status: number, details: unknown) {
-    super(`Nansen request failed for ${endpoint} (${status})`);
+    const detailMessage =
+      typeof details === "object" && details !== null && "message" in details && typeof (details as { message?: unknown }).message === "string"
+        ? (details as { message: string }).message
+        : typeof details === "object" && details !== null && "error" in details && typeof (details as { error?: unknown }).error === "string"
+          ? (details as { error: string }).error
+          : "";
+    super(`Nansen request failed for ${endpoint} (${status})${detailMessage ? `: ${detailMessage}` : ""}`);
     this.details = details;
   }
 
@@ -187,7 +193,7 @@ export class NansenService {
     const body = {
       chains,
       filters: {
-        include_smart_money_labels: filters.filters?.include_smart_money_labels ?? ["Fund", "Smart Trader", "30D Smart Trader"],
+        include_smart_money_labels: filters.filters?.include_smart_money_labels ?? ["Fund", "90D Smart Trader", "30D Smart Trader"],
         market_cap_usd: { min: 1000000 },
         trader_count: { min: 5 },
         ...(filters.filters?.min_net_flow_usd ? { net_flow_usd: { min: filters.filters.min_net_flow_usd } } : {}),

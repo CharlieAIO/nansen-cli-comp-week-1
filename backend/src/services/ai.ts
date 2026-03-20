@@ -65,7 +65,7 @@ Return JSON matching exactly:
   "netflow": {
     "limit": 20,
     "filters": {
-      "include_smart_money_labels": ["Fund", "Smart Trader", "30D Smart Trader"]
+      "include_smart_money_labels": ["Fund", "90D Smart Trader", "30D Smart Trader"]
     }
   },
   "pnlLeaderboard": {
@@ -334,13 +334,13 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
       case "momentum":
         return {
           screener: { ...screenerBase, min_smart_money_wallet_count: 5, min_volume_usd: 500000 },
-          netflow: { limit: 10, filters: { include_smart_money_labels: ["Fund", "Smart Trader", "30D Smart Trader"], min_net_flow_usd: 250000 } },
+          netflow: { limit: 10, filters: { include_smart_money_labels: ["Fund", "90D Smart Trader", "30D Smart Trader"], min_net_flow_usd: 250000 } },
           pnlLeaderboard: { tokenAddress: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", limit: 10 },
         };
       case "shadow":
         return {
           screener: { ...screenerBase, min_smart_money_wallet_count: 4, min_volume_usd: 350000 },
-          netflow: { limit: 8, filters: { include_smart_money_labels: ["Fund", "Smart Trader"] } },
+          netflow: { limit: 8, filters: { include_smart_money_labels: ["Fund", "90D Smart Trader"] } },
           pnlLeaderboard: { tokenAddress: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6ix2JzwXo1tBLum", limit: 15 },
         };
       case "contrarian":
@@ -352,13 +352,13 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
       case "quant":
         return {
           screener: { ...screenerBase, min_smart_money_wallet_count: 3, min_volume_usd: 300000 },
-          netflow: { limit: 8, filters: { include_smart_money_labels: ["Fund", "Smart Trader"] } },
+          netflow: { limit: 8, filters: { include_smart_money_labels: ["Fund", "90D Smart Trader"] } },
           pnlLeaderboard: { tokenAddress: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", limit: 10 },
         };
       default:
         return {
           screener: screenerBase,
-          netflow: { limit: 10, filters: { include_smart_money_labels: ["Fund", "Smart Trader"] } },
+          netflow: { limit: 10, filters: { include_smart_money_labels: ["Fund", "90D Smart Trader"] } },
           pnlLeaderboard: { tokenAddress: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", limit: 10 },
         };
     }
