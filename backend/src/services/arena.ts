@@ -35,9 +35,17 @@ export class ArenaOrchestrator {
   private readonly sim = new SimulationEngine();
   private readonly agents = getAgents();
   readonly record: ArenaRecord;
+  // Baseline captured from persisted state so new calls accumulate on top
+  // rather than resetting to zero each time the process restarts.
+  private readonly nansenBaseline: { totalCalls: number; totalCredits: number; callLog: ArenaState["nansen"]["callLog"] };
 
   constructor(private readonly arenaId: string, private readonly config: ArenaConfig, initialState?: ArenaState) {
     this.record = new ArenaRecord(initialState ? structuredClone(initialState) : this.initializeState());
+    this.nansenBaseline = {
+      totalCalls: this.record.state.nansen.totalCalls,
+      totalCredits: this.record.state.nansen.totalCredits,
+      callLog: [...this.record.state.nansen.callLog],
+    };
   }
 
   abort() {
@@ -313,10 +321,11 @@ export class ArenaOrchestrator {
   }
 
   private refreshNansenStats() {
+    const newCalls = this.nansen.getCallLog();
     this.record.state.nansen = {
-      totalCalls: this.nansen.getTotalCalls(),
-      totalCredits: this.nansen.getTotalCredits(),
-      callLog: this.nansen.getCallLog(),
+      totalCalls: this.nansenBaseline.totalCalls + this.nansen.getTotalCalls(),
+      totalCredits: this.nansenBaseline.totalCredits + this.nansen.getTotalCredits(),
+      callLog: [...newCalls, ...this.nansenBaseline.callLog].slice(-400),
       schemaLoaded: this.record.state.nansen.schemaLoaded,
       source: this.nansen.getSource(),
     };
