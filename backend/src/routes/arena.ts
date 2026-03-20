@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { ensureArenaRunning } from "../lib/arena-service";
-import { getAllArenas, getArenaInstance, getArenaRecord, setActiveArena } from "../lib/arena-store";
+import { getActiveArenaInstance, getAllArenas, getArenaInstance, getArenaRecord, setActiveArena } from "../lib/arena-store";
 import type { ArenaConfig } from "../lib/types";
 
 const router = Router();
@@ -19,7 +19,7 @@ router.post("/start", async (_req: Request, res: Response) => {
 // GET /api/arena/current
 router.get("/current", async (_req: Request, res: Response) => {
   try {
-    const active = await ensureArenaRunning();
+    const active = getActiveArenaInstance();
     if (!active) {
       res.json({ arenaId: null, state: null });
       return;

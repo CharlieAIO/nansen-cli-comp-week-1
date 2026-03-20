@@ -17,6 +17,7 @@ export function ArenaView() {
   const { arenaId, state } = useArenaStream();
   const [now, setNow] = useState<number | null>(null);
   const winner = state.phase === "complete" ? state.rankings[0] : null;
+  const hasAgentResults = Object.keys(state.lastRoundResults).length > 0;
   const currentTime = now ?? new Date(state.startedAt).getTime();
   const roundElapsedSeconds = Math.max(0, Math.floor((currentTime - new Date(state.roundStartedAt).getTime()) / 1000));
   const secondsToNextUpdate = state.nextUpdateAt
@@ -48,7 +49,7 @@ export function ArenaView() {
         </div>
         <div className="heroActions">
           <div className="heroMeta">
-            <span className="pill">Status: Operational</span>
+            <span className="pill">Status: {state.phase}</span>
             <span className="pill">{state.mode === "continuous" ? "Continuous" : `Round ${state.round}`}</span>
           </div>
         </div>
@@ -80,6 +81,14 @@ export function ArenaView() {
       {state.error ? (
         <section className="panel statusBanner" style={{ background: "rgba(255, 59, 77, 0.05)", borderColor: "var(--danger)" }}>
           <p style={{ color: "var(--danger)", fontSize: "12px", fontFamily: "var(--font-mono)" }}>SYSTEM ERROR: {state.error}</p>
+        </section>
+      ) : null}
+
+      {!state.error && !hasAgentResults ? (
+        <section className="panel statusBanner">
+          <p style={{ fontSize: "12px", fontFamily: "var(--font-mono)" }}>
+            Waiting for the backend arena loop to finish the first live research cycle.
+          </p>
         </section>
       ) : null}
 

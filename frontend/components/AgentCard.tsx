@@ -57,7 +57,7 @@ export function AgentCard({
 
       <div className="decisionArea">
         <span className="label">Strategic Insight</span>
-        <p className="thinking">{result?.thinking ?? "Analyzing market conditions..."}</p>
+        <p className="thinking">{result?.thinking ?? "Waiting for the first completed live research pass."}</p>
       </div>
 
       {result?.researchSummary && (
@@ -128,4 +128,3 @@ export function AgentCard({
     </article>
   );
 }
-

@@ -46,7 +46,7 @@ export function LiveFeed({ events }: { events: ArenaEvent[] }) {
               </span>
             </div>
           </div>
-        )) : <div className="feedRow" style={{ justifyContent: "center", opacity: 0.5 }}><span>Awaiting network activity...</span></div>}
+        )) : <div className="feedRow" style={{ justifyContent: "center", opacity: 0.5 }}><span>Waiting for backend events...</span></div>}
       </div>
     </section>
   );
