@@ -12,6 +12,7 @@ const MODEL = "gpt-5.4-nano";
 
 export class AIService {
   private readonly apiKey = process.env.OPENAI_API_KEY;
+  private readonly nativeSolAddress = "So11111111111111111111111111111111111111112";
 
   ensureConfigured() {
     if (!this.apiKey) {
@@ -86,6 +87,11 @@ Valid smart money labels for netflow: "Fund", "30D Smart Trader", "90D Smart Tra
     if (!parsed) {
       return defaults;
     }
+    const candidateTokenAddress = typeof parsed.pnlLeaderboard?.tokenAddress === "string" ? parsed.pnlLeaderboard.tokenAddress : defaults.pnlLeaderboard.tokenAddress;
+    const safeTokenAddress = candidateTokenAddress && candidateTokenAddress !== this.nativeSolAddress
+      ? candidateTokenAddress
+      : defaults.pnlLeaderboard.tokenAddress;
+
     return {
       screener: { ...defaults.screener, ...parsed.screener },
       netflow: {
@@ -96,7 +102,7 @@ Valid smart money labels for netflow: "Fund", "30D Smart Trader", "90D Smart Tra
           ...parsed.netflow?.filters,
         },
       },
-      pnlLeaderboard: { ...defaults.pnlLeaderboard, ...parsed.pnlLeaderboard },
+      pnlLeaderboard: { ...defaults.pnlLeaderboard, ...parsed.pnlLeaderboard, tokenAddress: safeTokenAddress },
     };
   }
 

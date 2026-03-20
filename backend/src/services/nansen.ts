@@ -23,6 +23,7 @@ const VALID_TOKEN_SCREENER_SORT_FIELDS = new Set([
   "buy_volume",
   "sell_volume",
 ]);
+const SOL_NATIVE_TOKEN_ADDRESS = "So11111111111111111111111111111111111111112";
 
 export class NansenApiError extends Error {
   constructor(endpoint: string, status: number, details: unknown) {
@@ -229,6 +230,9 @@ export class NansenService {
 
   async postPnlLeaderboard(filters: PnlLeaderboardFilters): Promise<unknown[]> {
     if (!filters.tokenAddress) throw new Error("PnL leaderboard requires tokenAddress");
+    if (filters.tokenAddress === SOL_NATIVE_TOKEN_ADDRESS) {
+      throw new Error("PnL leaderboard does not support the native SOL token address");
+    }
     const body = {
       chain: typeof filters.chain === "string" ? filters.chain : "solana",
       token_address: filters.tokenAddress,
