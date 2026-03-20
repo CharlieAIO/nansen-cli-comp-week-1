@@ -10,13 +10,29 @@ jobs:
     name: Deploy Backend
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Railway backend deploy
-        run: curl -X POST "${{ secrets.RAILWAY_DEPLOY_HOOK_BACKEND }}"
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy
+        run: railway up --service nansen-competition-w1 --detach
+        working-directory: ./backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   deploy-frontend:
     name: Deploy Frontend
     needs: deploy-backend
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Railway frontend deploy
-        run: curl -X POST "${{ secrets.RAILWAY_DEPLOY_HOOK_FRONTEND }}"
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy
+        run: railway up --service nansen-fe --detach
+        working-directory: ./frontend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
