@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { ensureArenaRunning } from "../lib/arena-service";
-import { getArenaInstance, getArenaRecord, setActiveArena } from "../lib/arena-store";
+import { getAllArenas, getArenaInstance, getArenaRecord, setActiveArena } from "../lib/arena-store";
 import type { ArenaConfig } from "../lib/types";
 
 const router = Router();
@@ -89,6 +89,11 @@ router.get("/results/:id", (req: Request, res: Response) => {
     return;
   }
   res.json({ arenaId: req.params.id, state: record.state });
+});
+
+// GET /api/arena/history
+router.get("/history", (_req: Request, res: Response) => {
+  res.json(getAllArenas());
 });
 
 export default router;
