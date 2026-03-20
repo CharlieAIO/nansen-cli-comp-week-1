@@ -5,6 +5,24 @@ import type { NansenCall, NetflowFilters, PnlLeaderboardFilters, TokenScreenerFi
 
 const execFileAsync = promisify(execFile);
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const VALID_TOKEN_SCREENER_SORT_FIELDS = new Set([
+  "chain",
+  "token_address",
+  "token_symbol",
+  "market_cap_usd",
+  "volume",
+  "liquidity",
+  "nof_traders",
+  "nof_buyers",
+  "nof_sellers",
+  "nof_buys",
+  "nof_sells",
+  "price_change",
+  "price_usd",
+  "netflow",
+  "buy_volume",
+  "sell_volume",
+]);
 
 export class NansenApiError extends Error {
   constructor(endpoint: string, status: number, details: unknown) {
@@ -166,6 +184,10 @@ export class NansenService {
       ? filters.chains.filter((value): value is string => typeof value === "string")
       : ["solana"];
 
+    const sortField = typeof filters.sort_by === "string" && VALID_TOKEN_SCREENER_SORT_FIELDS.has(filters.sort_by)
+      ? filters.sort_by
+      : "volume";
+
     const body = {
       chains,
       date: {
@@ -178,7 +200,7 @@ export class NansenService {
         ...(filters.min_smart_money_wallet_count ? { nof_traders: { min: filters.min_smart_money_wallet_count } } : {}),
         only_smart_money: true,
       },
-      order_by: [{ field: filters.sort_by ?? "volume", direction: "DESC" }],
+      order_by: [{ field: sortField, direction: "DESC" }],
     };
     const result = await this.postEndpoint("/token-screener", body);
     if (!Array.isArray(result)) throw new NansenApiError("/token-screener", 500, { error: "Unexpected response shape" });
