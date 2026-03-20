@@ -137,17 +137,6 @@ body::before {
   margin-bottom: var(--space-xl);
 }
 
-.statusBanner {
-  padding: 18px 24px;
-  margin-bottom: 24px;
-  border-left: 4px solid var(--danger);
-}
-
-.statusBanner p {
-  margin: 0;
-  color: var(--muted);
-}
-
 .statCard {
   padding: var(--space-md) var(--space-lg);
   display: flex;
@@ -196,39 +185,16 @@ body::before {
   font-size: 1.1rem;
 }
 
-.commentaryMeta {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  border-top: 1px solid var(--border-bright);
-  padding-top: 16px;
-}
-
-.commentaryMeta strong {
-  display: block;
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  color: var(--accent);
-  text-transform: uppercase;
-  margin-top: 4px;
-}
-
 .agentCard {
   padding: 24px;
-  border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
 }
 
 .agentCard.active {
   border-color: var(--accent);
   box-shadow: 0 0 20px rgba(85, 255, 204, 0.1);
-}
-
-.agentCard.active::before {
-  border-color: var(--accent);
 }
 
 .agentCard header {
@@ -265,45 +231,12 @@ body::before {
   filter: grayscale(0) contrast(1);
 }
 
-.agentCardDecoration {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.corner-tl {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 12px;
-  height: 12px;
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-  opacity: 0.5;
-}
-
-.corner-br {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 12px;
-  height: 12px;
-  clip-path: polygon(100% 100%, 0 100%, 100% 0);
-  opacity: 0.5;
-}
-
 .agentCard h2 {
   margin: 4px 0 0;
   font-family: var(--font-display);
   font-size: 1.25rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-}
-
-.focusToken {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-  font-family: var(--font-mono);
 }
 
 .agentValue {
@@ -345,8 +278,17 @@ body::before {
   border-bottom: 1px solid var(--border);
 }
 
-.returnBadge.up { color: var(--shadow); background: rgba(0, 255, 136, 0.05); border-color: rgba(0, 255, 136, 0.2); }
-.returnBadge.down { color: var(--danger); background: rgba(255, 51, 68, 0.05); border-color: rgba(255, 51, 68, 0.2); }
+.returnBadge.up { 
+  color: var(--shadow); 
+  background: rgba(0, 255, 136, 0.05); 
+  border-color: rgba(0, 255, 136, 0.2); 
+}
+
+.returnBadge.down { 
+  color: var(--danger); 
+  background: rgba(255, 51, 68, 0.05); 
+  border-color: rgba(255, 51, 68, 0.2); 
+}
 
 .thinking {
   font-family: var(--font-mono);
@@ -428,14 +370,6 @@ body::before {
   font-family: var(--font-mono);
 }
 
-.tokenChip {
-  padding: 8px;
-  border: 1px solid var(--border);
-  font-size: 11px;
-  font-family: var(--font-mono);
-  background: rgba(255, 255, 255, 0.02);
-}
-
 .sideGrid {
   display: flex;
   flex-direction: column;
@@ -475,62 +409,6 @@ body::before {
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--accent);
-}
-
-.chartWrap {
-  height: 240px;
-  border: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.2);
-}
-
-.commentarySubtext {
-  margin: -8px 0 20px;
-  color: var(--muted);
-  line-height: 1.5;
-  font-size: 13px;
-}
-
-.commentaryCallout {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-bright);
-}
-
-.commentaryCallout p {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
-.nansenCallList {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  background: var(--border);
-}
-
-.nansenCallRow {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  background: var(--panel);
-}
-
-.nansenCallRow strong,
-.nansenCallRow span {
-  display: block;
-}
-
-.nansenCallRow strong {
-  font-size: 13px;
-  word-break: break-word;
-}
-
-.nansenCallRow span {
-  color: var(--muted);
-  font-size: 11px;
-  margin-top: 4px;
 }
 
 .winnerBanner {
@@ -615,4 +493,3 @@ body::after {
   z-index: 100;
   opacity: 0.2;
 }
-
