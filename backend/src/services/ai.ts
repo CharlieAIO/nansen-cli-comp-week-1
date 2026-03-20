@@ -146,11 +146,7 @@ Return JSON:
 }`;
 
     const text = await this.call(system, user, 1000);
-    const parsed = this.parseJsonSafe<TradeDecision>(text);
-    if (!parsed) {
-      throw new Error(`Failed to parse trade decision for ${agent.name}`);
-    }
-    return parsed;
+    return this.finalizeTradeDecision(text, agent.name);
   }
 
   async runAgentWithMCP(
@@ -226,6 +222,7 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
           max_tokens: 2000,
           messages,
           tools: tools.length > 0 ? tools : undefined,
+          response_format: { type: "json_object" },
         }),
       });
 
@@ -243,11 +240,7 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
       messages.push({ role: msg.role, content: msg.content, tool_calls: msg.tool_calls });
 
       if (choice.finish_reason === "stop" || !msg.tool_calls?.length) {
-        const parsed = this.parseJsonSafe<TradeDecision>(msg.content ?? "");
-        if (!parsed) {
-          throw new Error(`Failed to parse MCP trade decision for ${agent.name}`);
-        }
-        return parsed;
+        return this.finalizeTradeDecision(msg.content ?? "", agent.name);
       }
 
       for (const toolCall of msg.tool_calls ?? []) {
@@ -305,6 +298,62 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
       if (match) {
         try { return JSON.parse(match[0]) as T; } catch { return null; }
       }
+      return null;
+    }
+  }
+
+  private async finalizeTradeDecision(text: string, agentName: string): Promise<TradeDecision> {
+    const parsed = this.parseJsonSafe<TradeDecision>(text);
+    if (parsed) {
+      return parsed;
+    }
+
+    const repaired = await this.repairTradeDecision(text);
+    if (repaired) {
+      return repaired;
+    }
+
+    return {
+      thinking: `${agentName} could not produce a valid structured decision, so it holds this round.`,
+      trades: [],
+      focusToken: undefined,
+      researchSummary: "Decision parsing failed after a repair attempt.",
+      researchSignals: [],
+    };
+  }
+
+  private async repairTradeDecision(rawText: string): Promise<TradeDecision | null> {
+    if (!rawText.trim()) {
+      return null;
+    }
+
+    try {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 600,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content:
+                "Convert the input into valid JSON with keys thinking, trades, focusToken, researchSummary, researchSignals. If the input lacks a valid trade, return an empty trades array.",
+            },
+            {
+              role: "user",
+              content: rawText,
+            },
+          ],
+        }),
+      });
+      const data = await res.json() as { choices?: Array<{ message: { content: string } }> };
+      return this.parseJsonSafe<TradeDecision>(data.choices?.[0]?.message?.content ?? "");
+    } catch {
       return null;
     }
   }
