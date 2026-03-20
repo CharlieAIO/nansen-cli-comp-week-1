@@ -69,11 +69,43 @@ export class NansenService {
   }
 
   async getSmartMoneyNetflow(params: Record<string, unknown>) {
-    return this.post("/smart-money/netflow", params);
+    const limit = typeof params.limit === "number" ? params.limit : 20;
+    const chain = typeof params.chain === "string" ? params.chain : undefined;
+    const chains = Array.isArray(params.chains)
+      ? params.chains.filter((value): value is string => typeof value === "string")
+      : chain
+        ? [chain]
+        : ["solana"];
+
+    return this.postSmartMoneyNetflow({
+      limit,
+      filters: {
+        ...(typeof params.min_net_flow_usd === "number" ? { min_net_flow_usd: params.min_net_flow_usd } : {}),
+      },
+      chains,
+    } as NetflowFilters & { chains: string[] });
   }
 
   async getTokenScreener(params: Record<string, unknown>) {
-    return this.post("/token-screener", params);
+    const limit = typeof params.limit === "number" ? params.limit : 20;
+    const timeframe = typeof params.timeframe === "string" ? params.timeframe : "24h";
+    const chain = typeof params.chain === "string" ? params.chain : undefined;
+    const chains = Array.isArray(params.chains)
+      ? params.chains.filter((value): value is string => typeof value === "string")
+      : chain
+        ? [chain]
+        : ["solana"];
+
+    return this.postTokenScreener({
+      timeframe: timeframe as TokenScreenerFilters["timeframe"],
+      limit,
+      chains,
+      min_volume_usd: typeof params.min_volume_usd === "number" ? params.min_volume_usd : undefined,
+      min_smart_money_wallet_count: typeof params.min_smart_money_wallet_count === "number"
+        ? params.min_smart_money_wallet_count
+        : undefined,
+      sort_by: typeof params.sort_by === "string" ? params.sort_by : undefined,
+    } as TokenScreenerFilters & { chains: string[] });
   }
 
   async getTokenFlows(params: { chain: string; tokenAddress: string; timeframe?: string }) {
@@ -85,7 +117,10 @@ export class NansenService {
   }
 
   async getPnlLeaderboard(params: { chain: string; tokenAddress: string }) {
-    return this.post("/tgm/pnl-leaderboard", params);
+    return this.postPnlLeaderboard({
+      tokenAddress: params.tokenAddress,
+      chain: params.chain,
+    });
   }
 
   async getWalletTransactions(params: { chain: string; addresses: string[]; limit?: number }) {
@@ -121,8 +156,12 @@ export class NansenService {
   }
 
   async postTokenScreener(filters: TokenScreenerFilters): Promise<unknown[]> {
+    const chains = Array.isArray(filters.chains)
+      ? filters.chains.filter((value): value is string => typeof value === "string")
+      : ["solana"];
+
     const body = {
-      chains: ["solana"],
+      chains,
       date: {
         from: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         to: new Date().toISOString(),
@@ -141,8 +180,12 @@ export class NansenService {
   }
 
   async postSmartMoneyNetflow(filters: NetflowFilters): Promise<unknown[]> {
+    const chains = Array.isArray(filters.chains)
+      ? filters.chains.filter((value): value is string => typeof value === "string")
+      : ["solana"];
+
     const body = {
-      chains: ["solana"],
+      chains,
       filters: {
         include_smart_money_labels: filters.filters?.include_smart_money_labels ?? ["Fund", "Smart Trader", "30D Smart Trader"],
         market_cap_usd: { min: 1000000 },
@@ -160,7 +203,7 @@ export class NansenService {
   async postPnlLeaderboard(filters: PnlLeaderboardFilters): Promise<unknown[]> {
     if (!filters.tokenAddress) throw new Error("PnL leaderboard requires tokenAddress");
     const body = {
-      chain: "solana",
+      chain: typeof filters.chain === "string" ? filters.chain : "solana",
       token_address: filters.tokenAddress,
       date: {
         from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
