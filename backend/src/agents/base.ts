@@ -17,11 +17,6 @@ export abstract class BaseAgent implements TradingAgent {
   abstract readonly strategyPrompt: string;
 
   async gatherData(context: AgentRunContext): Promise<AgentNansenData> {
-    // When MCP is connected, data gathering happens inside the agentic loop in decide()
-    if (context.mcp?.connected) {
-      return { screener: [], netflow: [], pnlLeaderboard: [] };
-    }
-
     const { nansen, claude, portfolio, round } = context;
 
     const filters = await claude.getAgentFilters(
@@ -48,16 +43,6 @@ export abstract class BaseAgent implements TradingAgent {
     context: AgentRunContext,
     round: number,
   ): Promise<TradeDecision> {
-    if (context.mcp?.connected) {
-      return context.claude.runAgentWithMCP(
-        { id: this.id, name: this.name, strategyPrompt: this.strategyPrompt, maxAllocPct: this.maxAllocPct },
-        args.portfolio,
-        round,
-        context.mcp,
-        (name, toolArgs) => context.nansen.logMcpCall(name, toolArgs),
-      );
-    }
-
     return context.claude.getAgentTradeDecision(
       { id: this.id, name: this.name, strategyPrompt: this.strategyPrompt, maxAllocPct: this.maxAllocPct },
       args.portfolio,

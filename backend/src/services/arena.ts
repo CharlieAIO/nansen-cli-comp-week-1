@@ -72,11 +72,14 @@ export class ArenaOrchestrator {
       }
       this.emit("arena_start", { totalRounds: this.config.totalRounds, source: this.nansen.getSource() });
 
-      if (!this.mcp) {
-        throw new Error("Nansen MCP client could not be initialized");
+      if (this.mcp) {
+        try {
+          await this.mcp.connect();
+          this.emit("log", { message: `MCP connected — ${this.mcp.tools.length} tools available` });
+        } catch (error) {
+          this.emit("log", { message: `MCP unavailable, using REST research only: ${error instanceof Error ? error.message : String(error)}` });
+        }
       }
-      await this.mcp.connect();
-      this.emit("log", { message: `MCP connected — ${this.mcp.tools.length} tools available` });
 
       let round = this.record.state.round > 0 ? this.record.state.round + 1 : 1;
       while (!this.record.state.aborted && (this.config.mode === "continuous" || round <= (this.config.totalRounds ?? 0))) {
