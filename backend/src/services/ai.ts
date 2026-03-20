@@ -74,6 +74,11 @@ Return JSON matching exactly:
   }
 }
 
+Valid screener sort_by values: "volume", "netflow", "liquidity", "market_cap_usd", "nof_traders", "price_change", "price_usd", "buy_volume", "sell_volume", "token_symbol", "token_address", "chain", "nof_buyers", "nof_sellers", "nof_buys", "nof_sells".
+Do not invent field names.
+
+Valid smart money labels for netflow: "Fund", "30D Smart Trader", "90D Smart Trader", "180D Smart Trader", "All Time Smart Trader".
+
     Adapt the parameters to match your strategy. The tokenAddress must be a valid Solana address from your knowledge of top Solana tokens.`;
 
     const text = await this.call(system, user, 400);
