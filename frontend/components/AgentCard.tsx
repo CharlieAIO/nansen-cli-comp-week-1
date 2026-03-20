@@ -64,7 +64,7 @@ export function AgentCard({
       {result?.researchSummary && (
         <div className="researchArea">
           <span className="label">Market Research</span>
-          <p className="researchSummary" style={{ fontSize: "12px", opacity: 0.9 }}>{result.researchSummary}</p>
+          <p className="researchSummary">{result.researchSummary}</p>
           {signals.length > 0 && (
             <div className="signalGrid">
               {signals.map((signal) => (
