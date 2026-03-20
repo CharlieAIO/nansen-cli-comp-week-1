@@ -4,9 +4,6 @@ import Image from "next/image";
 export function Leaderboard({ rankings }: { rankings: AgentSummary[] }) {
   return (
     <section className="panel sidePanel leaderboard">
-      <div className="agentCardDecoration">
-        <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
-      </div>
       <div className="sectionHead">
         <h3>Leaderboard</h3>
         <span className="pill">Live</span>
@@ -15,7 +12,7 @@ export function Leaderboard({ rankings }: { rankings: AgentSummary[] }) {
         {rankings.map((agent) => (
           <div key={agent.id} className="leaderRow">
             <span className="rankIndex">#{agent.rank}</span>
-            <div className="miniAvatarWrap" style={{ borderColor: agent.color }}>
+            <div className="avatarWrap" style={{ width: "24px", height: "24px", borderColor: agent.color }}>
               <Image 
                 src={`/avatars/${agent.id}.png`} 
                 alt={agent.name} 

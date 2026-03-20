@@ -35,57 +35,51 @@ export function ArenaView() {
   return (
     <main className="shell">
       <section className="hero panel">
-        <div className="agentCardDecoration">
-          <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
-        </div>
-        <div>
-          <span className="pill">AI Agent Trading Arena</span>
-          <h1>Shared live arena</h1>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+            <span className="pill" style={{ borderColor: "var(--accent)", color: "var(--accent)", background: "var(--accent-soft)" }}>Live Session</span>
+            <span className="pill">ID: {arenaId ? arenaId.slice(0, 8) : "Initializing..."}</span>
+          </div>
+          <h1>AI Agent Arena</h1>
           <p>
-            A backend-managed process keeps four agents trading continuously, and this page polls the
-            latest state so anyone opening the site sees the same run in progress.
+            Autonomous trading agents competing in real-time. Powered by Nansen data 
+            and advanced strategic analysis.
           </p>
         </div>
         <div className="heroActions">
           <div className="heroMeta">
-            <span className="pill">Arena {arenaId ? arenaId.slice(0, 8) : "booting"}</span>
-            <span className="pill">Data {state.nansen.source}</span>
-            <span className="pill">Polling shared status</span>
+            <span className="pill">Status: Operational</span>
+            <span className="pill">{state.mode === "continuous" ? "Continuous" : `Round ${state.round}`}</span>
           </div>
         </div>
       </section>
 
       <section className="overview grid overviewGrid">
         <div className="panel statCard">
-          <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
-          <span className="label">Round</span>
-          <strong>{state.mode === "continuous" ? `#${state.round}` : `${state.round}/${state.totalRounds ?? 0}`}</strong>
-          <small>{state.activeAgentId ? `${state.activeAgentId} is processing` : "Waiting for next cycle"}</small>
+          <span className="label">Current Phase</span>
+          <strong>{state.mode === "continuous" ? `R${state.round}` : `${state.round}/${state.totalRounds ?? 0}`}</strong>
+          <small>{state.activeAgentId ? `${state.activeAgentId} calculating` : "Cycle transition"}</small>
         </div>
         <div className="panel statCard">
-          <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
-          <span className="label">Uptime</span>
+          <span className="label">Session Uptime</span>
           <strong>{Math.floor(runtimeSeconds / 60).toString().padStart(2, "0")}m {String(runtimeSeconds % 60).padStart(2, "0")}s</strong>
-          <small>{secondsToNextUpdate === null ? "No timer active" : `Next update in about ${secondsToNextUpdate}s`}</small>
+          <small>{secondsToNextUpdate === null ? "Steady state" : `Next tick: ${secondsToNextUpdate}s`}</small>
         </div>
         <div className="panel statCard">
-          <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
-          <span className="label">Lead signal</span>
+          <span className="label">Top Market Inflow</span>
           <strong>{state.sharedMarket.topInflowToken || "Scanning"}</strong>
-          <small>Retail heat: {state.sharedMarket.topRetailToken}</small>
+          <small>Retail Heat: {state.sharedMarket.topRetailToken}</small>
         </div>
         <div className="panel statCard">
-          <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
-          <span className="label">Nansen activity</span>
-          <strong>{state.nansen.totalCalls} calls</strong>
-          <small>{state.nansen.totalCredits} credits used · {state.nansen.source}</small>
+          <span className="label">Nansen Integration</span>
+          <strong>{state.nansen.totalCalls} Calls</strong>
+          <small>{state.nansen.totalCredits} credits · {state.nansen.source}</small>
         </div>
       </section>
 
       {state.error ? (
-        <section className="panel statusBanner">
-          <span className="pill">Status</span>
-          <p>{state.error}</p>
+        <section className="panel statusBanner" style={{ background: "rgba(255, 59, 77, 0.05)", borderColor: "var(--danger)" }}>
+          <p style={{ color: "var(--danger)", fontSize: "12px", fontFamily: "var(--font-mono)" }}>SYSTEM ERROR: {state.error}</p>
         </section>
       ) : null}
 
@@ -120,3 +114,4 @@ export function ArenaView() {
     </main>
   );
 }
+

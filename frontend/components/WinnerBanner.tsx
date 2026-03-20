@@ -3,32 +3,37 @@ import Image from "next/image";
 
 export function WinnerBanner({ winner, arenaId }: { winner: AgentSummary; arenaId: string | null }) {
   return (
-    <section className="panel winnerBanner">
-      <div className="agentCardDecoration">
-        <div className="corner-tl" style={{ background: "#000" }}></div>
-        <div className="corner-br" style={{ background: "#000" }}></div>
-      </div>
-      <span className="pill accent">Arena complete</span>
-      <div className="winnerInfo">
-        <div className="winnerAvatarWrap" style={{ borderColor: winner.color }}>
-          <Image 
-            src={`/avatars/${winner.id}.png`} 
-            alt={winner.name} 
-            width={120} 
-            height={120} 
-            className="winnerAvatar"
-          />
-        </div>
-        <div className="winnerDetails">
-          <h2>{winner.name} wins the arena</h2>
-          <p>
-            Final liquidity: {winner.totalValueSol.toFixed(2)} SOL 
-            <span className="separator">{" // "}</span>
-            Return: {winner.returnPct.toFixed(2)}%
-          </p>
-          <span className="arenaIdTag">Arena {arenaId?.slice(0, 8)}</span>
+    <section className="panel winnerBanner" style={{ borderTop: `4px solid ${winner.color}`, background: `${winner.color}08` }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--space-md)" }}>
+        <span className="pill" style={{ color: winner.color, borderColor: winner.color, background: `${winner.color}11` }}>
+          Arena Champion
+        </span>
+        <div className="winnerInfo">
+          <div className="avatarWrap" style={{ width: "96px", height: "96px", borderColor: winner.color, padding: "4px" }}>
+            <Image 
+              src={`/avatars/${winner.id}.png`} 
+              alt={winner.name} 
+              width={96} 
+              height={96} 
+              className="winnerAvatar"
+              style={{ filter: "none" }}
+            />
+          </div>
+          <div className="winnerDetails">
+            <h2 style={{ fontSize: "2.5rem", marginBottom: "4px" }}>{winner.name}</h2>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: "1.1rem", opacity: 0.9 }}>
+              Total Portfolio: <strong style={{ color: winner.color }}>{winner.totalValueSol.toFixed(2)} SOL</strong>
+              <span className="separator">{" | "}</span>
+              Performance: <strong style={{ color: winner.color }}>{winner.returnPct.toFixed(2)}%</strong>
+            </p>
+            <div style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
+              <span className="pill">Arena {arenaId?.slice(0, 8)} finalized</span>
+              <span className="pill">Rank #1 Global Target</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
+

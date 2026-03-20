@@ -16,15 +16,17 @@ export function AgentCard({
   const signals = result?.researchSignals?.slice(0, 3) ?? [];
 
   return (
-    <article className={`panel agentCard ${isActive ? "active" : ""}`} style={{ borderColor: isActive ? agent.color : undefined }}>
-      <div className="agentCardDecoration">
-        <div className="corner-tl" style={{ background: agent.color }}></div>
-        <div className="corner-br" style={{ background: agent.color }}></div>
-      </div>
-
+    <article 
+      className={`panel agentCard ${isActive ? "active" : ""}`} 
+      style={{ 
+        borderTop: `2px solid ${agent.color}`,
+        borderColor: isActive ? agent.color : undefined,
+        boxShadow: isActive ? `0 4px 24px -12px ${agent.color}44` : undefined
+      }}
+    >
       <header>
         <div className="agentHeaderInfo">
-          <div className="avatarWrap" style={{ borderColor: agent.color }}>
+          <div className="avatarWrap" style={{ borderColor: `${agent.color}44` }}>
             <Image
               src={`/avatars/${agent.id}.png`}
               alt={agent.name}
@@ -34,34 +36,38 @@ export function AgentCard({
             />
           </div>
           <div>
-            <span className="pill" style={{ color: agent.color, borderColor: `${agent.color}44` }}>Rank #{agent.rank}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+              <span className="pill" style={{ color: agent.color, borderColor: `${agent.color}22`, background: `${agent.color}08` }}>
+                Rank #{agent.rank}
+              </span>
+              {result?.focusToken && <span className="pill">{result.focusToken}</span>}
+            </div>
             <h2>{agent.name}</h2>
-            {result?.focusToken ? <p className="focusToken">{result.focusToken}</p> : null}
           </div>
         </div>
 
         <div className="agentValue">
-          <span className="portfolioSOL">{portfolio.totalValueSol.toFixed(3)} SOL</span>
+          <span className="portfolioSOL">{portfolio.totalValueSol.toFixed(2)} SOL</span>
           <div className={`returnBadge ${agent.returnPct >= 0 ? "up" : "down"}`}>
             {agent.returnPct >= 0 ? "+" : ""}{agent.returnPct.toFixed(2)}%
           </div>
-          <span className="cashLine">{portfolio.cashSol.toFixed(2)} cash · {portfolio.positions.length} pos</span>
+          <span className="cashLine">{portfolio.cashSol.toFixed(1)} SOL available</span>
         </div>
       </header>
 
       <div className="decisionArea">
-        <span className="label">Thinking</span>
-        <p className="thinking">{result?.thinking ?? "—"}</p>
+        <span className="label">Strategic Insight</span>
+        <p className="thinking">{result?.thinking ?? "Analyzing market conditions..."}</p>
       </div>
 
-      {result?.researchSummary ? (
+      {result?.researchSummary && (
         <div className="researchArea">
-          <span className="label">Research</span>
-          <p className="researchSummary">{result.researchSummary}</p>
+          <span className="label">Market Research</span>
+          <p className="researchSummary" style={{ fontSize: "12px", opacity: 0.9 }}>{result.researchSummary}</p>
           {signals.length > 0 && (
             <div className="signalGrid">
               {signals.map((signal) => (
-                <div key={`${agent.id}-${signal.label}`} className={`signalCard ${signal.tone ?? "neutral"}`}>
+                <div key={`${agent.id}-${signal.label}`} className="signalCard">
                   <span>{signal.label}</span>
                   <strong>{signal.value}</strong>
                 </div>
@@ -69,43 +75,57 @@ export function AgentCard({
             </div>
           )}
         </div>
-      ) : null}
+      )}
 
       <div className="positionsArea">
-        <span className="label">Positions</span>
+        <span className="label">Open Positions</span>
         <div className="positionList">
           {positions.length ? positions.map((position) => (
             <div key={position.tokenAddress} className="positionRow">
-              <div>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                 <strong>{position.tokenSymbol}</strong>
-                <span>{position.tokenAmount.toFixed(4)}</span>
+                <span style={{ fontSize: "10px", opacity: 0.6 }}>{position.tokenAmount.toFixed(2)}</span>
               </div>
-              <div>
-                <strong>${position.currentValueUsd.toFixed(0)}</strong>
-                <span className={position.currentValueUsd >= position.entryValueUsd ? "up" : "down"}>
+              <div style={{ textAlign: "right" }}>
+                <strong style={{ display: "block" }}>${position.currentValueUsd.toFixed(0)}</strong>
+                <span className={position.currentValueUsd >= position.entryValueUsd ? "up" : "down"} style={{ fontSize: "10px" }}>
                   {position.entryValueUsd > 0
                     ? `${(((position.currentValueUsd - position.entryValueUsd) / position.entryValueUsd) * 100).toFixed(1)}%`
                     : "—"}
                 </span>
               </div>
             </div>
-          )) : <div className="positionRow muted"><span>No open positions</span></div>}
+          )) : <div className="positionRow" style={{ justifyContent: "center", opacity: 0.5 }}><span style={{ fontSize: "11px" }}>No active positions</span></div>}
         </div>
       </div>
 
       <div className="tradesArea">
-        <span className="label">Last trades</span>
-        <div className="tradeList">
+        <span className="label">Execution Log</span>
+        <div className="positionList">
           {result?.trades.length ? result.trades.map((trade, index) => (
-            <div key={`${trade.token_address}-${index}`} className="tradeRow">
-              <span style={{ color: trade.action === "BUY" ? "var(--shadow)" : "var(--danger)" }}>{trade.action}</span>
-              <span>{trade.token_symbol}</span>
-              <span>{trade.amount_sol.toFixed(2)} SOL</span>
-              <span className="muted">@ ${trade.executedPriceUsd.toFixed(4)}</span>
+            <div key={`${trade.token_address}-${index}`} className="positionRow">
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <span style={{ 
+                  fontSize: "9px", 
+                  fontWeight: 800, 
+                  color: trade.action === "BUY" ? "var(--shadow)" : "var(--danger)",
+                  border: `1px solid ${trade.action === "BUY" ? "var(--shadow)44" : "var(--danger)44"}`,
+                  padding: "1px 4px",
+                  background: trade.action === "BUY" ? "var(--shadow)11" : "var(--danger)11"
+                }}>
+                  {trade.action}
+                </span>
+                <strong>{trade.token_symbol}</strong>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <span style={{ display: "block", color: "var(--text)", fontWeight: 600 }}>{trade.amount_sol.toFixed(2)} SOL</span>
+                <span className="muted" style={{ fontSize: "10px" }}>@ ${trade.executedPriceUsd.toFixed(4)}</span>
+              </div>
             </div>
-          )) : <div className="tradeRow muted"><span>No trades this round</span></div>}
+          )) : <div className="positionRow" style={{ justifyContent: "center", opacity: 0.5 }}><span style={{ fontSize: "11px" }}>No recent executions</span></div>}
         </div>
       </div>
     </article>
   );
 }
+
