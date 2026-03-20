@@ -1,8 +1,0 @@
-# Railway configuration for monorepo deployment
-# Deploy two services: backend and frontend
-
-[services.backend]
-source = "backend"
-
-[services.frontend]
-source = "frontend"
