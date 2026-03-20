@@ -56,7 +56,8 @@ export class ArenaOrchestrator {
     const schemaSummary = JSON.stringify(schema, null, 2).slice(0, 1800);
     this.emit("log", { message: "Nansen schema loaded", schemaSource: this.nansen.getSource() });
 
-    for (let round = 1; round <= this.config.totalRounds; round += 1) {
+    let round = 1;
+    while (!this.record.state.aborted && (this.config.mode === "continuous" || round <= (this.config.totalRounds ?? 0))) {
       if (this.record.state.aborted) {
         break;
       }
@@ -115,6 +116,7 @@ export class ArenaOrchestrator {
         }
 
         this.refreshNansenStats();
+        this.record.state.nextUpdateAt = new Date(Date.now() + this.config.roundDelayMs).toISOString();
         await sleep(this.config.roundDelayMs);
       }
 
@@ -127,18 +129,23 @@ export class ArenaOrchestrator {
       }
       this.updateRankings();
       this.emit("round_end", { round, rankings: this.record.state.rankings });
+      this.record.state.nextUpdateAt = new Date(Date.now() + this.config.roundDelayMs).toISOString();
       await sleep(this.config.roundDelayMs);
+      round += 1;
     }
 
+    this.record.state.nextUpdateAt = undefined;
     this.record.state.phase = this.record.state.aborted ? "aborted" : "complete";
     this.record.state.completedAt = new Date().toISOString();
     this.updateRankings();
     this.refreshNansenStats();
-    this.emit("arena_complete", {
-      winner: this.record.state.rankings[0] ?? null,
-      totalCalls: this.record.state.nansen.totalCalls,
-      totalCredits: this.record.state.nansen.totalCredits,
-    });
+    if (!this.record.state.aborted) {
+      this.emit("arena_complete", {
+        winner: this.record.state.rankings[0] ?? null,
+        totalCalls: this.record.state.nansen.totalCalls,
+        totalCredits: this.record.state.nansen.totalCredits,
+      });
+    }
 
     return {
       arenaId: this.arenaId,
@@ -155,6 +162,7 @@ export class ArenaOrchestrator {
     return {
       id: this.arenaId,
       phase: "idle",
+      mode: this.config.mode,
       round: 0,
       totalRounds: this.config.totalRounds,
       startedAt: new Date().toISOString(),

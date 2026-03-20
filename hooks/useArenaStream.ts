@@ -7,9 +7,11 @@ import type { ArenaConfig, ArenaState } from "@/lib/types";
 const defaultState: ArenaState = {
   id: "",
   phase: "idle",
+  mode: "continuous",
   round: 0,
-  totalRounds: 6,
+  totalRounds: null,
   startedAt: new Date(0).toISOString(),
+  nextUpdateAt: undefined,
   activeAgentId: null,
   rankings: [],
   portfolios: {
@@ -52,6 +54,38 @@ export function useArenaStream() {
     } finally {
       setIsStarting(false);
     }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function ensureArena() {
+      const currentRes = await fetch("/api/arena/current", { cache: "no-store" });
+      const current = (await currentRes.json()) as { arenaId: string | null; state: ArenaState | null };
+      if (cancelled) return;
+
+      if (current.arenaId && current.state) {
+        setArenaId(current.arenaId);
+        setState(current.state);
+        return;
+      }
+
+      const res = await fetch("/api/arena/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "continuous", totalRounds: null, roundDelayMs: 12000 }),
+      });
+      const data = (await res.json()) as { arenaId: string };
+      if (!cancelled) {
+        setArenaId(data.arenaId);
+      }
+    }
+
+    void ensureArena();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const stopArena = useCallback(async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 
 import type { ArenaState } from "@/lib/types";
 
@@ -22,20 +22,45 @@ export function EquityCurve({ state }: { state: ArenaState }) {
 
   return (
     <section className="panel sidePanel chartPanel">
+      <div className="agentCardDecoration">
+        <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
+      </div>
       <div className="sectionHead">
-        <h3>Equity Curves</h3>
-        <span className="pill">Round {state.round}</span>
+        <h3>EQUITY_ANALYTICS</h3>
+        <span className="pill">ROUND_{state.round.toString().padStart(2, '0')}</span>
       </div>
       <div className="chartWrap">
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={240}>
           <LineChart data={chartData}>
-            <XAxis dataKey="round" stroke="#7f95ad" tickLine={false} axisLine={false} />
-            <YAxis stroke="#7f95ad" tickLine={false} axisLine={false} domain={[9, 12.5]} />
-            <Tooltip contentStyle={{ background: "#091523", border: "1px solid rgba(140,186,255,0.18)" }} />
-            <Line dataKey="momentum" stroke="#47d9ff" dot={false} strokeWidth={2} />
-            <Line dataKey="shadow" stroke="#7af0b2" dot={false} strokeWidth={2} />
-            <Line dataKey="contrarian" stroke="#ff8d63" dot={false} strokeWidth={2} />
-            <Line dataKey="quant" stroke="#b9a5ff" dot={false} strokeWidth={2} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+            <XAxis 
+              dataKey="round" 
+              stroke="#444" 
+              tick={{ fill: '#888', fontSize: 10, fontFamily: 'var(--font-mono)' }} 
+              tickLine={false} 
+              axisLine={false} 
+            />
+            <YAxis 
+              stroke="#444" 
+              tick={{ fill: '#888', fontSize: 10, fontFamily: 'var(--font-mono)' }} 
+              tickLine={false} 
+              axisLine={false} 
+              domain={['auto', 'auto']} 
+            />
+            <Tooltip 
+              contentStyle={{ 
+                background: "#000", 
+                border: "1px solid var(--accent)",
+                borderRadius: "0px",
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px'
+              }} 
+              itemStyle={{ textTransform: 'uppercase' }}
+            />
+            <Line dataKey="momentum" stroke="var(--momentum)" dot={false} strokeWidth={2} />
+            <Line dataKey="shadow" stroke="var(--shadow)" dot={false} strokeWidth={2} />
+            <Line dataKey="contrarian" stroke="var(--contrarian)" dot={false} strokeWidth={2} />
+            <Line dataKey="quant" stroke="var(--quant)" dot={false} strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </div>

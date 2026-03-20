@@ -13,52 +13,70 @@ const AGENT_ORDER = ["momentum", "shadow", "contrarian", "quant"] as const;
 export function ArenaView() {
   const { arenaId, state, isStarting, startArena, stopArena } = useArenaStream();
   const winner = state.phase === "complete" ? state.rankings[0] : null;
+  const runtimeSeconds = Math.max(0, Math.floor((Date.now() - new Date(state.startedAt).getTime()) / 1000));
+  const secondsToNextUpdate = state.nextUpdateAt
+    ? Math.max(0, Math.ceil((new Date(state.nextUpdateAt).getTime() - Date.now()) / 1000))
+    : null;
 
   return (
     <main className="shell">
+      <div className="scanline" />
       <section className="hero panel">
+        <div className="agentCardDecoration">
+          <div className="corner-tl" style={{ background: "var(--accent)" }}></div>
+        </div>
         <div>
-          <span className="pill">AI Agent Trading Arena</span>
-          <h1>Four Solana agents. Real Nansen data. One winner.</h1>
+          <span className="pill">QUANTUM_ARENA_v1.0</span>
+          <h1>ALWAYS_ON. LIVE_PROGRESS. NO_RESET.</h1>
           <p>
-            Server-side Nansen and Claude orchestration, simulated execution, live SSE updates, and a
-            commentator calling every round.
+            The arena stays live on the server, keeps cycling through rounds, and shows current progress,
+            runtime, and the next scheduled update as soon as you open the site.
           </p>
         </div>
         <div className="heroActions">
-          <button className="primaryButton" onClick={() => startArena({ totalRounds: 6, roundDelayMs: 800 })} disabled={isStarting || state.phase === "running"}>
-            {isStarting ? "Booting arena..." : state.phase === "running" ? "Arena live" : "Start arena"}
-          </button>
-          <button className="secondaryButton" onClick={stopArena} disabled={state.phase !== "running"}>
-            Stop
-          </button>
+          <div className="heroControlGroup">
+            <button
+              className="primaryButton"
+              onClick={() => startArena({ mode: "continuous", totalRounds: null, roundDelayMs: 12000 })}
+              disabled={isStarting || state.phase === "running"}
+            >
+              {isStarting ? "BOOTING_SEQUENCE..." : state.phase === "running" ? "ARENA_ACTIVE" : "RESTART_ENGINE"}
+            </button>
+            <button className="secondaryButton" onClick={stopArena} disabled={state.phase !== "running"}>
+              TERMINATE
+            </button>
+          </div>
           <div className="heroMeta">
-            <span className="pill">Arena {arenaId ? arenaId.slice(0, 8) : "ready"}</span>
-            <span className="pill">Source {state.nansen.source}</span>
+            <span className="pill">INSTANCE: {arenaId ? arenaId.slice(0, 8) : "IDLE"}</span>
+            <span className="pill">DATA_STREAM: {state.nansen.source.toUpperCase()}</span>
           </div>
         </div>
       </section>
 
       <section className="overview grid overviewGrid">
         <div className="panel statCard">
-          <span className="label">Round</span>
-          <strong>{state.round}/{state.totalRounds}</strong>
-          <small>{state.activeAgentId ? `${state.activeAgentId} on deck` : "Waiting for open"}</small>
+          <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
+          <span className="label">CURRENT_PHASE</span>
+          <strong>{state.mode === "continuous" ? `ROUND_${state.round.toString().padStart(3, "0")}` : `${state.round.toString().padStart(2, "0")} / ${(state.totalRounds ?? 0).toString().padStart(2, "0")}`}</strong>
+          <small>{state.activeAgentId ? `NODE_${state.activeAgentId.toUpperCase()}_PROCESSING` : "AWAITING_ROUND_OPEN"}</small>
         </div>
         <div className="panel statCard">
-          <span className="label">Nansen Calls</span>
-          <strong>{state.nansen.totalCalls}</strong>
-          <small>{state.nansen.totalCredits} credits</small>
+          <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
+          <span className="label">RUNTIME_AND_ETA</span>
+          <strong>{Math.floor(runtimeSeconds / 60).toString().padStart(2, "0")}M {String(runtimeSeconds % 60).padStart(2, "0")}S</strong>
+          <small>{secondsToNextUpdate === null ? "NO_TIMER_ACTIVE" : `NEXT_UPDATE_IN_${secondsToNextUpdate}S`}</small>
         </div>
         <div className="panel statCard">
-          <span className="label">Shared Signal</span>
-          <strong>{state.sharedMarket.topInflowToken}</strong>
-          <small>Retail heat: {state.sharedMarket.topRetailToken}</small>
+          <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
+          <span className="label">ALPHA_SIGNAL_TOP</span>
+          <strong>{state.sharedMarket.topInflowToken || "SCANNING..."}</strong>
+          <small>FOMO_RETAIL: {state.sharedMarket.topRetailToken}</small>
         </div>
         <div className="panel statCard">
-          <span className="label">SOL Price</span>
-          <strong>${state.sharedMarket.solPriceUsd.toFixed(2)}</strong>
-          <small>{state.nansen.schemaLoaded ? "Schema loaded" : "Loading schema"}</small>
+          <div className="agentCardDecoration"><div className="corner-tl" style={{ background: "var(--accent)" }}></div></div>
+          <span className="label">NANSEN_RATE_WINDOW</span>
+          <strong>{state.nansen.totalCalls.toString().padStart(3, "0")} CALLS</strong>
+          <small>{state.nansen.totalCredits} BUDGET_USED · {state.nansen.source.toUpperCase()}</small>
         </div>
       </section>
 

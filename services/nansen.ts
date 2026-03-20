@@ -22,6 +22,7 @@ import {
 } from "@/services/mock-data";
 
 const execFileAsync = promisify(execFile);
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export class NansenApiError extends Error {
   constructor(endpoint: string, status: number, details: unknown) {
@@ -33,6 +34,7 @@ export class NansenApiError extends Error {
 }
 
 export class NansenService {
+  private static requestTimestamps: number[] = [];
   private readonly apiKey = process.env.NANSEN_API_KEY;
   private readonly baseUrl = "https://api.nansen.ai/api/v1";
   private readonly callLog: NansenCall[] = [];
@@ -142,33 +144,44 @@ export class NansenService {
       return fallback;
     }
 
-    const res = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        apiKey: this.apiKey,
-      },
-      body: JSON.stringify(body),
-      cache: "no-store",
-    });
-    const elapsed = Date.now() - start;
-    const json = await res.json();
-    this.logCall(endpoint, body, res.status, elapsed, this.estimateCredits(endpoint), "rest");
+    await this.acquireRateLimitSlot();
 
-    if (!res.ok) {
-      throw new NansenApiError(endpoint, res.status, json);
+    try {
+      const res = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apiKey: this.apiKey,
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
+      });
+      const elapsed = Date.now() - start;
+      const json = await res.json();
+      this.logCall(endpoint, body, res.status, elapsed, this.estimateCredits(endpoint), "rest");
+
+      if (!res.ok) {
+        this.source = "mock";
+        return fallback;
+      }
+
+      this.source = "live";
+      return json.data ?? json;
+    } catch {
+      this.logCall(endpoint, body, 200, Date.now() - start, this.estimateCredits(endpoint), "mock");
+      this.source = "mock";
+      return fallback;
     }
-
-    return json.data ?? json;
   }
 
   private async execCli(args: string[], endpoint: string, fallback: unknown) {
     const start = Date.now();
     try {
+      await this.acquireRateLimitSlot();
       const { stdout } = await execFileAsync("nansen", args, { env: process.env });
       const elapsed = Date.now() - start;
       const parsed = this.tryParse(stdout);
-      this.source = this.apiKey ? "live" : this.source;
+      this.source = "live";
       this.logCall(endpoint, args, 200, elapsed, this.estimateCredits(endpoint), "cli");
       return parsed;
     } catch {
@@ -205,6 +218,26 @@ export class NansenService {
       "nansen schema": 0,
     };
     return costs[endpoint] ?? 1;
+  }
+
+  private async acquireRateLimitSlot() {
+    while (true) {
+      const now = Date.now();
+      NansenService.requestTimestamps = NansenService.requestTimestamps.filter((timestamp) => now - timestamp < 60000);
+      const lastSecond = NansenService.requestTimestamps.filter((timestamp) => now - timestamp < 1000).length;
+      const lastMinute = NansenService.requestTimestamps.length;
+
+      if (lastSecond < 20 && lastMinute < 300) {
+        NansenService.requestTimestamps.push(now);
+        return;
+      }
+
+      const oldestSecond = NansenService.requestTimestamps.find((timestamp) => now - timestamp < 1000) ?? now;
+      const oldestMinute = NansenService.requestTimestamps[0] ?? now;
+      const waitForSecond = Math.max(0, 1000 - (now - oldestSecond));
+      const waitForMinute = Math.max(0, 60000 - (now - oldestMinute));
+      await sleep(Math.max(100, Math.min(waitForSecond || waitForMinute, waitForMinute || waitForSecond)));
+    }
   }
 
   private logCall(endpoint: string, params: unknown, status: number, latencyMs: number, creditCost: number, via: NansenCall["via"]) {

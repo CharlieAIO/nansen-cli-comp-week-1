@@ -5,7 +5,8 @@ export type ArenaPhase = "idle" | "running" | "complete" | "aborted";
 export type TradeAction = "BUY" | "SELL";
 
 export interface ArenaConfig {
-  totalRounds: number;
+  mode: "fixed" | "continuous";
+  totalRounds: number | null;
   roundDelayMs: number;
   chain: "solana";
 }
@@ -105,10 +106,12 @@ export interface RoundSummary {
 export interface ArenaState {
   id: string;
   phase: ArenaPhase;
+  mode: ArenaConfig["mode"];
   round: number;
-  totalRounds: number;
+  totalRounds: number | null;
   startedAt: string;
   completedAt?: string;
+  nextUpdateAt?: string;
   activeAgentId: AgentId | null;
   rankings: AgentSummary[];
   portfolios: Record<AgentId, AgentPortfolio>;
@@ -187,7 +190,7 @@ export interface AgentPromptArgs {
   marketData: AgentMarketData;
   portfolio: AgentPortfolio;
   round: number;
-  totalRounds: number;
+  totalRounds: number | null;
   otherAgents: AgentSummary[];
   schemaSummary: string;
 }
