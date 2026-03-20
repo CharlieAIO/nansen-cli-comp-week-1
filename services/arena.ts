@@ -48,110 +48,123 @@ export class ArenaOrchestrator {
   }
 
   async runArena(): Promise<ArenaResult> {
-    this.record.state.phase = "running";
-    this.emit("arena_start", { totalRounds: this.config.totalRounds, source: this.nansen.getSource() });
+    try {
+      this.record.state.phase = "running";
+      this.emit("arena_start", { totalRounds: this.config.totalRounds, source: this.nansen.getSource() });
 
-    const schema = await this.nansen.cliSchema();
-    this.record.state.nansen.schemaLoaded = true;
-    const schemaSummary = JSON.stringify(schema, null, 2).slice(0, 1800);
-    this.emit("log", { message: "Nansen schema loaded", schemaSource: this.nansen.getSource() });
+      const schema = await this.nansen.cliSchema();
+      this.record.state.nansen.schemaLoaded = true;
+      const schemaSummary = JSON.stringify(schema, null, 2).slice(0, 1800);
+      this.emit("log", { message: "Nansen schema loaded", schemaSource: this.nansen.getSource() });
 
-    let round = 1;
-    while (!this.record.state.aborted && (this.config.mode === "continuous" || round <= (this.config.totalRounds ?? 0))) {
-      if (this.record.state.aborted) {
-        break;
-      }
-
-      this.record.state.round = round;
-      this.emit("round_start", { round });
-
-      const shared = await this.loadSharedMarket();
-      this.record.state.sharedMarket = {
-        solPriceUsd: shared.solPriceUsd,
-        topInflowToken: String(shared.netflows[0]?.token_symbol ?? "JUP"),
-        topRetailToken: String(shared.screener[2]?.token_symbol ?? "BONK"),
-      };
-
-      for (const agent of this.agents) {
-        const portfolio = this.record.state.portfolios[agent.id];
-        this.record.state.portfolios[agent.id] = this.sim.markToMarket(portfolio, shared.priceMap);
-      }
-
-      for (const agent of this.agents) {
+      let round = 1;
+      while (!this.record.state.aborted && (this.config.mode === "continuous" || round <= (this.config.totalRounds ?? 0))) {
         if (this.record.state.aborted) {
           break;
         }
 
-        this.record.state.activeAgentId = agent.id;
-        this.emit("agent_start", { agentId: agent.id, name: agent.name });
+        this.record.state.round = round;
+        this.emit("round_start", { round });
 
-        try {
-          const marketData = await agent.gatherData({ nansen: this.nansen, shared });
-          this.emit("agent_data", { agentId: agent.id, dataSources: agent.dataSources });
-          const prompt = agent.buildPrompt({
-            marketData,
-            portfolio: this.record.state.portfolios[agent.id],
-            round,
-            totalRounds: this.config.totalRounds,
-            otherAgents: this.getOtherAgentSummaries(agent.id),
-            schemaSummary,
-          });
-          const decision = await this.claude.getTradeDecision(prompt.system, prompt.user);
-          this.emit("agent_decision", { agentId: agent.id, thinking: decision.thinking, tradeCount: decision.trades.length });
-          const result = this.sim.executeTrades(this.record.state.portfolios[agent.id], decision.trades, shared.priceMap);
-          this.record.state.portfolios[agent.id] = result.portfolio;
-          this.record.state.tradeHistory[agent.id].push(...result.executedTrades);
-          this.record.state.thinkingHistory[agent.id].push(decision.thinking);
-          const roundResult: AgentRoundResult = {
-            agentId: agent.id,
-            trades: result.executedTrades,
-            thinking: decision.thinking,
-            portfolio: result.portfolio,
-          };
-          this.record.state.lastRoundResults[agent.id] = roundResult;
-          this.emit("agent_trades", { agentId: agent.id, trades: result.executedTrades, portfolio: result.portfolio });
-        } catch (error) {
-          const message = error instanceof Error ? error.message : "Unknown agent error";
-          this.emit("agent_error", { agentId: agent.id, message });
+        const shared = await this.loadSharedMarket();
+        this.record.state.sharedMarket = {
+          solPriceUsd: shared.solPriceUsd,
+          topInflowToken: String(shared.netflows[0]?.token_symbol ?? "JUP"),
+          topRetailToken: String(shared.screener[2]?.token_symbol ?? "BONK"),
+        };
+
+        for (const agent of this.agents) {
+          const portfolio = this.record.state.portfolios[agent.id];
+          this.record.state.portfolios[agent.id] = this.sim.markToMarket(portfolio, shared.priceMap);
         }
 
-        this.refreshNansenStats();
+        for (const agent of this.agents) {
+          if (this.record.state.aborted) {
+            break;
+          }
+
+          this.record.state.activeAgentId = agent.id;
+          this.emit("agent_start", { agentId: agent.id, name: agent.name });
+
+          try {
+            const marketData = await agent.gatherData({ nansen: this.nansen, shared });
+            this.emit("agent_data", { agentId: agent.id, dataSources: agent.dataSources });
+            const prompt = agent.buildPrompt({
+              marketData,
+              portfolio: this.record.state.portfolios[agent.id],
+              round,
+              totalRounds: this.config.totalRounds,
+              otherAgents: this.getOtherAgentSummaries(agent.id),
+              schemaSummary,
+            });
+            const decision = await this.claude.getTradeDecision(prompt.system, prompt.user);
+            this.emit("agent_decision", { agentId: agent.id, thinking: decision.thinking, tradeCount: decision.trades.length });
+            const result = this.sim.executeTrades(this.record.state.portfolios[agent.id], decision.trades, shared.priceMap);
+            this.record.state.portfolios[agent.id] = result.portfolio;
+            this.record.state.tradeHistory[agent.id].push(...result.executedTrades);
+            this.record.state.thinkingHistory[agent.id].push(decision.thinking);
+            const roundResult: AgentRoundResult = {
+              agentId: agent.id,
+              trades: result.executedTrades,
+              thinking: decision.thinking,
+              portfolio: result.portfolio,
+            };
+            this.record.state.lastRoundResults[agent.id] = roundResult;
+            this.emit("agent_trades", { agentId: agent.id, trades: result.executedTrades, portfolio: result.portfolio });
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "Unknown agent error";
+            this.emit("agent_error", { agentId: agent.id, message });
+          }
+
+          this.refreshNansenStats();
+          this.record.state.nextUpdateAt = new Date(Date.now() + this.config.roundDelayMs).toISOString();
+          await sleep(this.config.roundDelayMs);
+        }
+
+        this.record.state.activeAgentId = null;
+        this.captureEquityHistory(round);
+        const commentary = await this.safeCommentary(round);
+        if (commentary) {
+          this.record.state.commentaries.push(commentary);
+          this.emit("commentary", { round, commentary });
+        }
+        this.updateRankings();
+        this.emit("round_end", { round, rankings: this.record.state.rankings });
         this.record.state.nextUpdateAt = new Date(Date.now() + this.config.roundDelayMs).toISOString();
         await sleep(this.config.roundDelayMs);
+        round += 1;
       }
 
-      this.record.state.activeAgentId = null;
-      this.captureEquityHistory(round);
-      const commentary = await this.safeCommentary(round);
-      if (commentary) {
-        this.record.state.commentaries.push(commentary);
-        this.emit("commentary", { round, commentary });
-      }
+      this.record.state.nextUpdateAt = undefined;
+      this.record.state.phase = this.record.state.aborted ? "aborted" : "complete";
+      this.record.state.completedAt = new Date().toISOString();
       this.updateRankings();
-      this.emit("round_end", { round, rankings: this.record.state.rankings });
-      this.record.state.nextUpdateAt = new Date(Date.now() + this.config.roundDelayMs).toISOString();
-      await sleep(this.config.roundDelayMs);
-      round += 1;
-    }
+      this.refreshNansenStats();
+      if (!this.record.state.aborted) {
+        this.emit("arena_complete", {
+          winner: this.record.state.rankings[0] ?? null,
+          totalCalls: this.record.state.nansen.totalCalls,
+          totalCredits: this.record.state.nansen.totalCredits,
+        });
+      }
 
-    this.record.state.nextUpdateAt = undefined;
-    this.record.state.phase = this.record.state.aborted ? "aborted" : "complete";
-    this.record.state.completedAt = new Date().toISOString();
-    this.updateRankings();
-    this.refreshNansenStats();
-    if (!this.record.state.aborted) {
-      this.emit("arena_complete", {
+      return {
+        arenaId: this.arenaId,
         winner: this.record.state.rankings[0] ?? null,
-        totalCalls: this.record.state.nansen.totalCalls,
-        totalCredits: this.record.state.nansen.totalCredits,
-      });
+        state: this.record.state,
+      };
+    } catch (error) {
+      this.record.state.phase = "aborted";
+      this.record.state.error = error instanceof Error ? error.message : "Arena crashed";
+      this.record.state.nextUpdateAt = undefined;
+      this.refreshNansenStats();
+      this.emit("log", { message: "Arena halted", error: this.record.state.error });
+      return {
+        arenaId: this.arenaId,
+        winner: this.record.state.rankings[0] ?? null,
+        state: this.record.state,
+      };
     }
-
-    return {
-      arenaId: this.arenaId,
-      winner: this.record.state.rankings[0] ?? null,
-      state: this.record.state,
-    };
   }
 
   private initializeState(): ArenaState {
@@ -207,12 +220,31 @@ export class ArenaOrchestrator {
   private async loadSharedMarket(): Promise<SharedMarketSnapshot> {
     const sharedNetflows = await this.nansen.cliSmartMoneyNetflow("solana", 20);
     const sharedScreener = await this.nansen.cliTokenScreener("solana", "24h");
-    const netflows = (sharedNetflows.data ?? sharedNetflows) as Array<Record<string, unknown>>;
-    const screener = (sharedScreener.data ?? sharedScreener) as Array<Record<string, unknown>>;
+    const netflows = this.normalizeRecords(sharedNetflows);
+    const screener = this.normalizeRecords(sharedScreener);
     const priceMap = this.sim.buildPriceMap(netflows, screener);
     const solPriceUsd = priceMap.get("SOL") ?? 142;
     this.refreshNansenStats();
     return { netflows, screener, priceMap, solPriceUsd };
+  }
+
+  private normalizeRecords(input: unknown): Array<Record<string, unknown>> {
+    if (Array.isArray(input)) {
+      return input.filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+    }
+
+    if (!input || typeof input !== "object") {
+      return [];
+    }
+
+    const value = input as Record<string, unknown>;
+    for (const key of ["data", "items", "results", "tokens", "rows"]) {
+      if (Array.isArray(value[key])) {
+        return value[key].filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+      }
+    }
+
+    return [];
   }
 
   private async safeCommentary(round: number) {

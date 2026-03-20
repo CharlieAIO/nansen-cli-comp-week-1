@@ -1,10 +1,12 @@
 import type { AgentPortfolio, ExecutedTrade, Position, TradeInstruction } from "@/lib/types";
 
 export class SimulationEngine {
-  buildPriceMap(netflowData: Array<Record<string, unknown>>, screenerData: Array<Record<string, unknown>>) {
+  buildPriceMap(netflowData: unknown, screenerData: unknown) {
     const prices = new Map<string, number>();
+    const netflows = this.asRecords(netflowData);
+    const screener = this.asRecords(screenerData);
 
-    for (const item of [...netflowData, ...screenerData]) {
+    for (const item of [...netflows, ...screener]) {
       const address = String(item.token_address ?? "");
       const price = Number(item.price_usd ?? 0);
       if (address && Number.isFinite(price) && price > 0) {
@@ -20,6 +22,27 @@ export class SimulationEngine {
     }
 
     return prices;
+  }
+
+  private asRecords(input: unknown): Array<Record<string, unknown>> {
+    if (Array.isArray(input)) {
+      return input.filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+    }
+
+    if (!input || typeof input !== "object") {
+      return [];
+    }
+
+    const candidate = input as Record<string, unknown>;
+    const nestedKeys = ["data", "items", "results", "tokens", "rows"];
+
+    for (const key of nestedKeys) {
+      if (Array.isArray(candidate[key])) {
+        return candidate[key].filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+      }
+    }
+
+    return [];
   }
 
   markToMarket(portfolio: AgentPortfolio, currentPrices: Map<string, number>) {
