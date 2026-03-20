@@ -1,4 +1,5 @@
 import { ArenaRecord } from "../lib/arena-store";
+import { NansenMCPClient } from "./mcp-client";
 import type {
   AgentId,
   AgentPortfolio,
@@ -34,6 +35,7 @@ export class ArenaOrchestrator {
   private readonly claude = new AIService();
   private readonly sim = new SimulationEngine();
   private readonly agents = getAgents();
+  private readonly mcp: NansenMCPClient | undefined;
   readonly record: ArenaRecord;
   // Baseline captured from persisted state so new calls accumulate on top
   // rather than resetting to zero each time the process restarts.
@@ -41,6 +43,10 @@ export class ArenaOrchestrator {
 
   constructor(private readonly arenaId: string, private readonly config: ArenaConfig, initialState?: ArenaState) {
     this.record = new ArenaRecord(initialState ? structuredClone(initialState) : this.initializeState());
+    const mcpKey = process.env.NANSEN_API_KEY;
+    if (mcpKey) {
+      this.mcp = new NansenMCPClient(mcpKey);
+    }
     this.nansenBaseline = {
       totalCalls: this.record.state.nansen.totalCalls,
       totalCredits: this.record.state.nansen.totalCredits,
@@ -65,6 +71,15 @@ export class ArenaOrchestrator {
       await this.nansen.cliSchema();
       this.record.state.nansen.schemaLoaded = true;
       this.emit("log", { message: "Nansen schema loaded", schemaSource: this.nansen.getSource() });
+
+      if (this.mcp) {
+        try {
+          await this.mcp.connect();
+          this.emit("log", { message: `MCP connected — ${this.mcp.tools.length} tools available` });
+        } catch (err) {
+          this.emit("log", { message: `MCP connection failed, falling back to REST: ${err instanceof Error ? err.message : err}` });
+        }
+      }
 
       let round = this.record.state.round > 0 ? this.record.state.round + 1 : 1;
       while (!this.record.state.aborted && (this.config.mode === "continuous" || round <= (this.config.totalRounds ?? 0))) {
@@ -104,6 +119,7 @@ export class ArenaOrchestrator {
             const context = {
               nansen: this.nansen,
               claude: this.claude,
+              mcp: this.mcp,
               shared,
               portfolio: this.record.state.portfolios[agent.id],
               round,

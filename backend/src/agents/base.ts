@@ -17,21 +17,19 @@ export abstract class BaseAgent implements TradingAgent {
   abstract readonly strategyPrompt: string;
 
   async gatherData(context: AgentRunContext): Promise<AgentNansenData> {
+    // When MCP is connected, data gathering happens inside the agentic loop in decide()
+    if (context.mcp?.connected) {
+      return { screener: [], netflow: [], pnlLeaderboard: [] };
+    }
+
     const { nansen, claude, portfolio, round } = context;
 
-    // Step 1: Claude determines optimal filters for this agent's strategy
     const filters = await claude.getAgentFilters(
-      {
-        id: this.id,
-        name: this.name,
-        strategyPrompt: this.strategyPrompt,
-        maxAllocPct: this.maxAllocPct,
-      },
+      { id: this.id, name: this.name, strategyPrompt: this.strategyPrompt, maxAllocPct: this.maxAllocPct },
       portfolio,
       round,
     );
 
-    // Step 2: Call all 3 Nansen endpoints in parallel
     const [screener, netflow, pnlLeaderboard] = await Promise.allSettled([
       nansen.postTokenScreener(filters.screener),
       nansen.postSmartMoneyNetflow(filters.netflow),
@@ -50,13 +48,18 @@ export abstract class BaseAgent implements TradingAgent {
     context: AgentRunContext,
     round: number,
   ): Promise<TradeDecision> {
+    if (context.mcp?.connected) {
+      return context.claude.runAgentWithMCP(
+        { id: this.id, name: this.name, strategyPrompt: this.strategyPrompt, maxAllocPct: this.maxAllocPct },
+        args.portfolio,
+        round,
+        context.mcp,
+        (name, toolArgs) => context.nansen.logMcpCall(name, toolArgs),
+      );
+    }
+
     return context.claude.getAgentTradeDecision(
-      {
-        id: this.id,
-        name: this.name,
-        strategyPrompt: this.strategyPrompt,
-        maxAllocPct: this.maxAllocPct,
-      },
+      { id: this.id, name: this.name, strategyPrompt: this.strategyPrompt, maxAllocPct: this.maxAllocPct },
       args.portfolio,
       args.marketData,
       round,

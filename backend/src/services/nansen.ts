@@ -56,6 +56,10 @@ export class NansenService {
     return this.callLog.length;
   }
 
+  logMcpCall(toolName: string, args: unknown, creditCost = 1) {
+    this.logCall(toolName, args, 200, 0, creditCost, "mcp");
+  }
+
   async cliSchema() {
     return this.execCli(["schema", "--pretty"], "nansen schema", getMockSchema());
   }

@@ -18,7 +18,7 @@ export interface NansenCall {
   latencyMs: number;
   timestamp: string;
   creditCost: number;
-  via: "rest" | "cli" | "mock";
+  via: "rest" | "cli" | "mock" | "mcp";
 }
 
 export interface TradeInstruction {
@@ -206,6 +206,7 @@ export interface AgentDecisionArgs {
 export interface AgentRunContext {
   nansen: import("../services/nansen").NansenService;
   claude: import("../services/ai").AIService;
+  mcp: import("../services/mcp-client").NansenMCPClient | undefined;
   shared: SharedMarketSnapshot;
   portfolio: AgentPortfolio;
   round: number;

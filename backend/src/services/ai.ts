@@ -6,6 +6,7 @@ import type {
   RoundSummary,
   TradeDecision,
 } from "../lib/types";
+import type { NansenMCPClient } from "./mcp-client";
 
 const MODEL = "gpt-5.4-nano";
 
@@ -137,6 +138,125 @@ Return JSON:
 
     const text = await this.call(system, user, 1000);
     return this.parseJsonSafe<TradeDecision>(text) ?? holdDecision;
+  }
+
+  async runAgentWithMCP(
+    agent: { id: string; name: string; strategyPrompt: string; maxAllocPct: number },
+    portfolio: AgentPortfolio,
+    round: number,
+    mcp: NansenMCPClient,
+    onToolCall?: (name: string, args: unknown) => void,
+  ): Promise<TradeDecision> {
+    const holdDecision: TradeDecision = {
+      thinking: `[${agent.name}] MCP research complete - holding.`,
+      trades: [],
+      researchSummary: "No clear signals.",
+      researchSignals: [],
+    };
+
+    if (!this.apiKey) return holdDecision;
+
+    const tools = mcp.tools.map((t) => ({
+      type: "function" as const,
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: t.inputSchema,
+      },
+    }));
+
+    const system = `You are ${agent.name}, an AI crypto trading agent competing in a live arena on Solana.
+Strategy: ${agent.strategyPrompt}
+
+Use the Nansen tools to research the market, then output a JSON trading decision.
+Rules:
+- Call 2-4 Nansen tools that align with your strategy
+- Only trade tokens present in the data you gather (use exact addresses)
+- Maximum allocation: ${(agent.maxAllocPct * 100).toFixed(0)}% of portfolio per position
+- After research, respond ONLY with valid JSON (no markdown, no explanation)`;
+
+    type OAIMessage = {
+      role: string;
+      content: string | null;
+      tool_calls?: Array<{ id: string; type: string; function: { name: string; arguments: string } }>;
+      tool_call_id?: string;
+      name?: string;
+    };
+
+    const messages: OAIMessage[] = [
+      { role: "system", content: system },
+      {
+        role: "user",
+        content: `Round ${round}
+Portfolio: ${JSON.stringify({
+  cashSol: portfolio.cashSol,
+  totalValueSol: portfolio.totalValueSol,
+  returnPct: portfolio.returnPct,
+  positions: portfolio.positions.map((p) => ({ symbol: p.tokenSymbol, address: p.tokenAddress, valueUsd: p.currentValueUsd })),
+})}
+
+Research the market using the Nansen tools, then respond with a JSON trading decision:
+{
+  "thinking": "<2-3 sentence reasoning>",
+  "trades": [{ "action": "BUY"|"SELL", "token_symbol": "<symbol>", "token_address": "<address>", "amount_sol": <number>, "confidence": <0-1>, "reasoning": "<why>" }],
+  "focusToken": "<primary token>",
+  "researchSummary": "<1-2 sentences>",
+  "researchSignals": [{ "label": "<metric>", "value": "<value>", "tone": "positive"|"negative"|"neutral" }]
+}`,
+      },
+    ];
+
+    for (let iter = 0; iter < 8; iter++) {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 2000,
+          messages,
+          tools: tools.length > 0 ? tools : undefined,
+        }),
+      });
+
+      type OAIResponse = {
+        choices?: Array<{
+          message: OAIMessage;
+          finish_reason: string;
+        }>;
+      };
+      const data = await res.json() as OAIResponse;
+      const choice = data.choices?.[0];
+      if (!choice) break;
+
+      const msg = choice.message;
+      messages.push({ role: msg.role, content: msg.content, tool_calls: msg.tool_calls });
+
+      if (choice.finish_reason === "stop" || !msg.tool_calls?.length) {
+        return this.parseJsonSafe<TradeDecision>(msg.content ?? "") ?? holdDecision;
+      }
+
+      for (const toolCall of msg.tool_calls ?? []) {
+        let result: string;
+        try {
+          const args = JSON.parse(toolCall.function.arguments) as Record<string, unknown>;
+          onToolCall?.(toolCall.function.name, args);
+          result = await mcp.callTool(toolCall.function.name, args);
+        } catch (err) {
+          result = `Error: ${err instanceof Error ? err.message : String(err)}`;
+        }
+        messages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          name: toolCall.function.name,
+          content: result,
+        });
+      }
+    }
+
+    return holdDecision;
   }
 
   private async call(system: string, user: string, maxTokens: number): Promise<string> {
