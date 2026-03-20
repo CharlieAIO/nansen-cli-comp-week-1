@@ -7,36 +7,27 @@ import type {
   TradeDecision,
 } from "../lib/types";
 
-export class ClaudeService {
-  private readonly apiKey = process.env.ANTHROPIC_API_KEY;
+const MODEL = "gpt-5.4-nano";
+
+export class AIService {
+  private readonly apiKey = process.env.OPENAI_API_KEY;
 
   async getCommentary(roundData: RoundSummary): Promise<CommentaryOutput> {
     if (!this.apiKey) {
       return this.getMockCommentary(roundData);
     }
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": this.apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 500,
-        system:
-          "You are the commentator for an AI trading arena. Four AI agents are competing with Nansen data. Return punchy JSON only.",
-        messages: [{ role: "user", content: JSON.stringify(roundData) }],
-      }),
-    });
+    const text = await this.call(
+      "You are the commentator for an AI trading arena. Four AI agents are competing with Nansen data. Return punchy JSON only.",
+      JSON.stringify(roundData),
+      500,
+    );
 
-    const data = await res.json() as { content?: Array<{ type: string; text: string }> };
-    const text = (data.content ?? [])
-      .filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("");
-    return JSON.parse(text.replace(/```json\s*|\s*```/g, "").trim()) as CommentaryOutput;
+    try {
+      return JSON.parse(text.replace(/```json\s*|\s*```/g, "").trim()) as CommentaryOutput;
+    } catch {
+      return this.getMockCommentary(roundData);
+    }
   }
 
   async getAgentFilters(
@@ -83,7 +74,7 @@ Return JSON matching exactly:
 
 Adapt the parameters to match your strategy. The tokenAddress must be a valid Solana address from your knowledge of top Solana tokens.`;
 
-    const text = await this.callClaudeRaw(system, user, 400);
+    const text = await this.call(system, user, 400);
     return this.parseJsonSafe<NansenQuerySet>(text) ?? mock;
   }
 
@@ -144,31 +135,29 @@ Return JSON:
   ]
 }`;
 
-    const text = await this.callClaudeRaw(system, user, 1000);
+    const text = await this.call(system, user, 1000);
     return this.parseJsonSafe<TradeDecision>(text) ?? holdDecision;
   }
 
-  private async callClaudeRaw(system: string, user: string, maxTokens: number): Promise<string> {
+  private async call(system: string, user: string, maxTokens: number): Promise<string> {
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": this.apiKey!,
-          "anthropic-version": "2023-06-01",
+          "Authorization": `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: MODEL,
           max_tokens: maxTokens,
-          system,
-          messages: [{ role: "user", content: user }],
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
         }),
       });
-      const data = await res.json() as { content?: Array<{ type: string; text: string }> };
-      return (data.content ?? [])
-        .filter(b => b.type === "text")
-        .map(b => b.text)
-        .join("");
+      const data = await res.json() as { choices?: Array<{ message: { content: string } }> };
+      return data.choices?.[0]?.message?.content ?? "";
     } catch {
       return "";
     }
@@ -179,7 +168,6 @@ Return JSON:
       const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
       return JSON.parse(cleaned) as T;
     } catch {
-      // Try to find JSON in the text
       const match = text.match(/\{[\s\S]*\}/);
       if (match) {
         try { return JSON.parse(match[0]) as T; } catch { return null; }

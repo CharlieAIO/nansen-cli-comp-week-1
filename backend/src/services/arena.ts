@@ -12,7 +12,7 @@ import type {
   SharedMarketSnapshot,
 } from "../lib/types";
 import { getAgents } from "../agents/index";
-import { ClaudeService } from "./claude";
+import { AIService } from "./ai";
 import { NansenService } from "./nansen";
 import { SimulationEngine } from "./simulation";
 
@@ -31,7 +31,7 @@ function createPortfolio(): AgentPortfolio {
 
 export class ArenaOrchestrator {
   private readonly nansen = new NansenService();
-  private readonly claude = new ClaudeService();
+  private readonly claude = new AIService();
   private readonly sim = new SimulationEngine();
   private readonly agents = getAgents();
   readonly record: ArenaRecord;

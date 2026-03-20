@@ -205,7 +205,7 @@ export interface AgentDecisionArgs {
 
 export interface AgentRunContext {
   nansen: import("../services/nansen").NansenService;
-  claude: import("../services/claude").ClaudeService;
+  claude: import("../services/ai").AIService;
   shared: SharedMarketSnapshot;
   portfolio: AgentPortfolio;
   round: number;
