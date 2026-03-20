@@ -109,28 +109,23 @@ Strategy: ${agent.strategyPrompt}
 Rules:
 - Only trade tokens that appear in the Nansen data provided (use exact addresses from the data)
 - Maximum allocation per position: ${(agent.maxAllocPct * 100).toFixed(0)}% of total portfolio
-- Return ONLY valid JSON. No explanation. No markdown.
+- Return ONLY one valid JSON object. No markdown. No prose before or after JSON.
 - Be decisive but risk-aware. Hold cash if no conviction.`;
+
+    const promptData = this.buildTradePromptData(nansenData);
 
     const user = `Round ${round}
 Portfolio: ${JSON.stringify({ cashSol: portfolio.cashSol, totalValueSol: portfolio.totalValueSol, returnPct: portfolio.returnPct, positions: portfolio.positions.map(p => ({ symbol: p.tokenSymbol, address: p.tokenAddress, valueUsd: p.currentValueUsd })) })}
 
 NANSEN DATA:
-Token Screener (top tokens):
-${JSON.stringify(nansenData.screener.slice(0, 8), null, 2)}
+${JSON.stringify(promptData, null, 2)}
 
-Smart Money Netflow:
-${JSON.stringify(nansenData.netflow.slice(0, 10), null, 2)}
-
-PnL Leaderboard (top traders):
-${JSON.stringify(nansenData.pnlLeaderboard.slice(0, 5), null, 2)}
-
-Return JSON:
+Return EXACTLY this JSON structure with the same keys:
 {
-  "thinking": "<your reasoning in 2-3 sentences>",
+  "thinking": "<2-3 sentence reasoning>",
   "trades": [
     {
-      "action": "BUY",
+      "action": "BUY" | "SELL",
       "token_symbol": "<symbol from data>",
       "token_address": "<exact address from data>",
       "amount_sol": <number>,
@@ -138,12 +133,15 @@ Return JSON:
       "reasoning": "<why>"
     }
   ],
-  "focusToken": "<primary token>",
-  "researchSummary": "<1-2 sentence summary>",
+  "focusToken": "<primary token symbol or empty string>",
+  "researchSummary": "<1-2 sentence summary of the Nansen read>",
   "researchSignals": [
-    { "label": "<metric name>", "value": "<value>", "tone": "positive" }
+    { "label": "<metric name>", "value": "<value>", "tone": "positive" | "neutral" | "negative" }
   ]
-}`;
+}
+
+If you want to hold, set "trades": [] and still fill the other fields.
+Do not use null. Do not omit keys. Do not wrap the JSON in markdown.`;
 
     const text = await this.call(system, user, 1000);
     return this.finalizeTradeDecision(text, agent.name);
@@ -265,28 +263,31 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
   }
 
   private async call(system: string, user: string, maxTokens: number): Promise<string> {
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: maxTokens,
-          response_format: { type: "json_object" },
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: user },
-          ],
-        }),
-      });
-      const data = await res.json() as { choices?: Array<{ message: { content: string } }> };
-      return data.choices?.[0]?.message?.content ?? "";
-    } catch {
-      return "";
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: maxTokens,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      }),
+    });
+    const data = await res.json() as { choices?: Array<{ message: { content: string } }>; error?: { message?: string } };
+    if (!res.ok) {
+      throw new Error(`OpenAI request failed (${res.status}): ${data.error?.message ?? "Unknown error"}`);
     }
+    const content = data.choices?.[0]?.message?.content ?? "";
+    if (!content.trim()) {
+      throw new Error("OpenAI returned an empty response");
+    }
+    return content;
   }
 
   private parseJsonSafe<T>(text: string): T | null {
@@ -305,12 +306,12 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
   private async finalizeTradeDecision(text: string, agentName: string): Promise<TradeDecision> {
     const parsed = this.parseJsonSafe<TradeDecision>(text);
     if (parsed) {
-      return parsed;
+      return this.normalizeTradeDecision(parsed, agentName);
     }
 
     const repaired = await this.repairTradeDecision(text);
     if (repaired) {
-      return repaired;
+      return this.normalizeTradeDecision(repaired, agentName);
     }
 
     return {
@@ -356,6 +357,77 @@ Research the market using the Nansen tools, then respond with a JSON trading dec
     } catch {
       return null;
     }
+  }
+
+  private normalizeTradeDecision(decision: TradeDecision, agentName: string): TradeDecision {
+    return {
+      thinking: typeof decision.thinking === "string" && decision.thinking.trim()
+        ? decision.thinking.trim()
+        : `${agentName} is holding after reviewing the latest Nansen data.`,
+      trades: Array.isArray(decision.trades)
+        ? decision.trades
+            .filter((trade) => trade && typeof trade === "object")
+            .map((trade) => ({
+              action: (trade.action === "SELL" ? "SELL" : "BUY") as "BUY" | "SELL",
+              token_symbol: typeof trade.token_symbol === "string" ? trade.token_symbol : "",
+              token_address: typeof trade.token_address === "string" ? trade.token_address : "",
+              amount_sol: Number.isFinite(Number(trade.amount_sol)) ? Number(trade.amount_sol) : 0,
+              confidence: Number.isFinite(Number(trade.confidence)) ? Math.max(0, Math.min(1, Number(trade.confidence))) : 0.5,
+              reasoning: typeof trade.reasoning === "string" ? trade.reasoning : "",
+            }))
+            .filter((trade) => trade.token_symbol && trade.token_address)
+        : [],
+      focusToken: typeof decision.focusToken === "string" ? decision.focusToken : "",
+      researchSummary: typeof decision.researchSummary === "string" && decision.researchSummary.trim()
+        ? decision.researchSummary.trim()
+        : "No structured research summary provided.",
+      researchSignals: Array.isArray(decision.researchSignals)
+        ? decision.researchSignals
+            .filter((signal) => signal && typeof signal === "object")
+            .map((signal) => ({
+              label: typeof signal.label === "string" ? signal.label : "Signal",
+              value: typeof signal.value === "string" ? signal.value : "n/a",
+              tone: signal.tone === "positive" || signal.tone === "negative" || signal.tone === "neutral" ? signal.tone : "neutral",
+            }))
+            .slice(0, 4)
+        : [],
+    };
+  }
+
+  private buildTradePromptData(nansenData: AgentNansenData) {
+    return {
+      screener: nansenData.screener.slice(0, 6).map((token) => {
+        const item = token as Record<string, unknown>;
+        return {
+          symbol: item.token_symbol,
+          address: item.token_address,
+          price_usd: item.price_usd,
+          volume_24h_usd: item.volume_24h_usd ?? item.volume,
+          smart_money_wallets: item.smart_money_wallet_count ?? item.nof_traders,
+          market_cap_usd: item.market_cap_usd,
+        };
+      }),
+      netflow: nansenData.netflow.slice(0, 6).map((token) => {
+        const item = token as Record<string, unknown>;
+        return {
+          symbol: item.token_symbol,
+          address: item.token_address,
+          net_flow_24h_usd: item.net_flow_24h_usd,
+          net_flow_7d_usd: item.net_flow_7d_usd,
+          trader_count: item.trader_count,
+          market_cap_usd: item.market_cap_usd,
+        };
+      }),
+      pnlLeaderboard: nansenData.pnlLeaderboard.slice(0, 5).map((entry) => {
+        const item = entry as Record<string, unknown>;
+        return {
+          address: item.address,
+          realised_pnl_usd: item.realized_pnl_usd ?? item.pnl_usd_realised,
+          win_rate: item.win_rate,
+          token_symbol: item.token_symbol,
+        };
+      }),
+    };
   }
 
   private getMockCommentary(roundData: RoundSummary): CommentaryOutput {
